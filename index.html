@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080c0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DIANET</title>
+<link rel="manifest" href="manifest.json">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg:       #080c0e;
+  --surface:  #0e1518;
+  --card:     #131a1e;
+  --border:   #1e2d33;
+  --border2:  #243540;
+  --green:    #00e676;
+  --green-d:  #00b050;
+  --green-bg: rgba(0,230,118,0.08);
+  --red:      #ff3d3d;
+  --red-d:    #cc0000;
+  --red-bg:   rgba(255,61,61,0.08);
+  --amber:    #ffab00;
+  --amber-bg: rgba(255,171,0,0.08);
+  --blue:     #29b6f6;
+  --blue-bg:  rgba(41,182,246,0.08);
+  --muted:    #4a6472;
+  --text:     #cdd8de;
+  --text2:    #7a9aaa;
+  --accent:   #00e676;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 16px;
+}
+
+/* ── SCAN LINES TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(8,12,14,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 4px;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(0,230,118,0.4);
+}
+
+.header-logo span {
+  color: var(--text2);
+  font-size: 0.7rem;
+  display: block;
+  letter-spacing: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  margin-top: -4px;
+}
+
+.ble-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.ble-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: all 0.3s;
+}
+
+.ble-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse-dot 2s infinite; }
+.ble-dot.scanning { background: var(--amber); box-shadow: 0 0 8px var(--amber); animation: pulse-dot 0.5s infinite; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── SCREENS ── */
+.screen { display: none; padding: 20px; min-height: calc(100vh - 65px); }
+.screen.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── HOME ── */
+.home-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  letter-spacing: 6px;
+  line-height: 1;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #00e676, #29b6f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.home-subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 3px;
+  margin-bottom: 40px;
+}
+
+.home-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 20px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+}
+
+.home-card.central::before { background: var(--blue); }
+.home-card.diana::before { background: var(--green); }
+.home-card.tirador::before { background: var(--red); }
+
+.home-card:active { transform: scale(0.98); background: var(--border); }
+
+.home-card-icon {
+  font-size: 2rem;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.home-card.central .home-card-icon { background: var(--blue-bg); }
+.home-card.diana .home-card-icon { background: var(--green-bg); }
+.home-card.tirador .home-card-icon { background: var(--red-bg); }
+
+.home-card-text h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 3px;
+  margin-bottom: 2px;
+}
+
+.home-card.central h3 { color: var(--blue); }
+.home-card.diana h3 { color: var(--green); }
+.home-card.tirador h3 { color: var(--red); }
+
+.home-card-text p {
+  font-size: 0.8rem;
+  color: var(--text2);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.home-card-arrow {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 1.2rem;
+}
+
+/* ── BOTONES ── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 6px;
+  border: none;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn-green { background: var(--green); color: #000; }
+.btn-green:active { background: var(--green-d); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:active { background: var(--red-d); }
+.btn-blue { background: var(--blue); color: #000; }
+.btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+.btn-outline:active { background: var(--border); }
+.btn-amber { background: var(--amber); color: #000; }
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  width: auto;
+  margin-bottom: 0;
+  border-radius: 4px;
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── SCAN LIST ── */
+.scan-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.scan-item:active { background: var(--border); }
+
+.scan-item-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scan-item-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text);
+  flex: 1;
+}
+
+.scan-item-rssi {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text2);
+}
+
+/* ── FORM ── */
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus { border-color: var(--green); }
+
+.form-select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1rem;
+  outline: none;
+  appearance: none;
+}
+
+/* ── DASHBOARD FOSOS ── */
+.fosos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.foso-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.foso-tile:active { transform: scale(0.95); }
+
+.foso-tile.ok { border-color: rgba(0,230,118,0.3); }
+.foso-tile.warning { border-color: rgba(255,171,0,0.4); }
+.foso-tile.error { border-color: rgba(255,61,61,0.4); }
+.foso-tile.stopped { border-color: rgba(255,171,0,0.5); background: rgba(255,171,0,0.05); }
+
+.foso-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.foso-tile.ok .foso-num { color: var(--green); }
+.foso-tile.warning .foso-num { color: var(--amber); }
+.foso-tile.error .foso-num { color: var(--red); }
+.foso-tile.stopped .foso-num { color: var(--amber); }
+
+.foso-rssi {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.foso-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin: 4px auto 0;
+}
+
+.foso-tile.ok .foso-indicator { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.foso-tile.warning .foso-indicator { background: var(--amber); }
+.foso-tile.error .foso-indicator { background: var(--red); animation: pulse-dot 0.5s infinite; }
+.foso-tile.stopped .foso-indicator { background: var(--amber); animation: pulse-dot 1s infinite; }
+
+/* ── FOSO DETAIL ── */
+.foso-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.foso-detail-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(0,230,118,0.3);
+}
+
+.foso-detail-info h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  color: var(--text);
+}
+
+.foso-detail-info p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text2);
+}
+
+.nodo-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.nodo-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.nodo-card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+}
+
+.nodo-card.diana .nodo-card-title { color: var(--green); }
+.nodo-card.tirador .nodo-card-title { color: var(--red); }
+
+.rssi-bar-wrap {
+  margin-bottom: 8px;
+}
+
+.rssi-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.rssi-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rssi-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* ── SIMULACIÓN ── */
+.sim-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 20px;
+  margin-bottom: 20px;
+}
+
+.sim-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 4px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.sim-subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 28px;
+}
+
+.sim-lamps {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 28px;
+}
+
+.sim-lamp-wrap { text-align: center; }
+
+.sim-lamp {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--border2);
+  margin: 0 auto 10px;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.sim-lamp::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.sim-lamp.green-on {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 30px rgba(0,230,118,0.6), 0 0 60px rgba(0,230,118,0.3);
+}
+
+.sim-lamp.green-on::after { background: #fff; }
+
+.sim-lamp.red-on {
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 0 30px rgba(255,61,61,0.6), 0 0 60px rgba(255,61,61,0.3);
+}
+
+.sim-lamp.red-on::after { background: #fff; }
+
+.sim-lamp.off { background: #0a1215; }
+
+.sim-lamp-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+.sim-btn {
+  width: 100%;
+  padding: 18px;
+  background: var(--surface);
+  border: 2px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 10px;
+}
+
+.sim-btn:active {
+  transform: scale(0.97);
+  background: var(--border);
+}
+
+.sim-btn.active-green {
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 20px rgba(0,230,118,0.2);
+}
+
+.sim-btn.active-red {
+  border-color: var(--red);
+  color: var(--red);
+  box-shadow: 0 0 20px rgba(255,61,61,0.2);
+}
+
+/* ── LOG ── */
+.log-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text2);
+  height: 120px;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+
+.log-entry { display: flex; gap: 8px; }
+.log-time { color: var(--muted); flex-shrink: 0; }
+.log-msg.ok { color: var(--green); }
+.log-msg.err { color: var(--red); }
+.log-msg.info { color: var(--blue); }
+.log-msg.warn { color: var(--amber); }
+
+/* ── STATUS BADGE ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+}
+
+.badge-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
+.badge-red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,61,61,0.2); }
+.badge-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,171,0,0.2); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(41,182,246,0.2); }
+
+/* ── BACK BTN ── */
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+}
+
+.back-btn:active { color: var(--text); }
+
+/* ── INFO ROW ── */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.info-row:last-child { border-bottom: none; }
+.info-row-label { color: var(--text2); font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; }
+.info-row-value { font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; }
+
+/* ── ALERT ── */
+.alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.alert-amber { background: var(--amber-bg); border: 1px solid rgba(255,171,0,0.3); color: var(--amber); }
+.alert-green { background: var(--green-bg); border: 1px solid rgba(0,230,118,0.3); color: var(--green); }
+.alert-red { background: var(--red-bg); border: 1px solid rgba(255,61,61,0.3); color: var(--red); }
+
+/* ── SPINNER ── */
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+  transition: transform 0.3s ease;
+  z-index: 500;
+  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+
+/* ── STAT CARDS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* ── SEPARATOR ── */
+.sep { height: 1px; background: var(--border); margin: 20px 0; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    DIANET
+  </div>
+  <div class="ble-status">
+    <div class="ble-dot" id="bleDot"></div>
+    <span id="bleStatus">BLE OFF</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SCREEN: HOME -->
+<!-- ════════════════════════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div style="padding-top: 8px; margin-bottom: 32px;">
+    <div class="home-title">DIANET</div>
+    <div class="home-subtitle">SISTEMA DE CONTROL · CAMPO DE TIRO</div>
+  </div>
+
+  <div class="section-title">SELECCIONAR MODO</div>
+
+  <div class="home-card central" onclick="goTo('screen-central')">
+    <div class="home-card-icon">📡</div>
+    <div class="home-card-text">
+      <h3>CENTRAL</h3>
+      <p>Dashboard · Control de fosos · RSSI</p>
+    </div>
+    <div class="home-card-arrow">›</div>
+  </div>
+
+  <div class="home-card diana" onclick="goTo('screen-scan-diana')">
+    <div class="home-card-icon">🎯</div>
+    <div class="home-card-text">
+      <h3>NODO DIANA</h3>
+      <p>Configurar · Diagnosticar · Simular</p>
+    </div>
+    <div class="home-card-arrow">›</div>
+  </div>
+
+  <div class="home-card tirador" onclick="goTo('screen-scan-tirador')">
+    <div class="home-card-icon">🔫</div>
+    <div class="home-card-text">
+      <h3>NODO TIRADOR</h3>
+      <p>Configurar · Diagnosticar · Simular</p>
+    </div>
+    <div class="home-card-arrow">›</div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section-title">VERSIÓN</div>
+  <div style="font-family:'Share Tech Mono',monospace; font-size:0.7rem; color:var(--muted); line-height:2;">
+    v1.0
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SCREEN: SCAN DIANA -->
+<!-- ════════════════════════════════════════ -->
+<div class="screen" id="screen-scan-diana">
+  <button class="back-btn" onclick="goTo('screen-home')">← ATRÁS</button>
+  <div class="section-title">NODO DIANA</div>
+
+  <div class="alert alert-amber">
+    ⚠ Asegúrate de estar físicamente cerca del nodo diana que quieres configurar.
+  </div>
+
+  <button class="btn btn-green" onclick="startScan('diana')">
+    🔍 ESCANEAR DISPOSITIVOS BLE
+  </button>
+
+  <div id="scan-list-diana">
+    <div class="spinner" id="spinner-diana" style="display:none"></div>
+    <div id="devices-diana"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SCREEN: SCAN TIRADOR -->
+<!-- ════════════════════════════════════════ -->
+<div class="screen" id="screen-scan-tirador">
+  <button class="back-btn" onclick="goTo('screen-home')">← ATRÁS</button>
+  <div class="section-title">NODO TIRADOR</div>
+
+  <div class="alert alert-amber">
+    ⚠ Asegúrate de estar físicamente cerca del nodo tirador que quieres configurar.
+  </div>
+
+  <button class="btn btn-red" onclick="startScan('tirador')">
+    🔍 ESCANEAR DISPOSITIVOS BLE
+  </button>
+
+  <div id="scan-list-tirador">
+    <div class="spinner" id="spinner-tirador" style="display:none"></div>
+    <div id="devices-tirador"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SCREEN: CONFIG NODO -->
+<!-- ════════════════════════════════════════ -->
+<div class="screen" id="screen-config-nodo">
+  <button class="back-btn" id="config-back-btn" onclick="goTo('screen-home')">← ATRÁS</button>
+
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+    <div id="config-nodo-icon" style="font-size:2rem;"></div>
+    <div>
+      <div id="config-nodo-title" style="font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:3px;"></div>
+      <div id="config-nodo-mac" style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:var(--muted);"></div>
+    </div>
+    <div id="config-nodo-badge" style="margin-left:auto;"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex; gap:8px; margin-bottom:20px;">
+    <button class="btn btn-outline btn-sm" id="tab-config" onclick="showTab('config')" style="flex:1; font-family:'Bebas Neue'; letter-spacing:2px;">CONFIG</button>
+    <button class="btn btn-outline btn-sm" id="tab-diag" onclick="showTab('diag')" style="flex:1; font-family:'Bebas Neue'; letter-spacing:2px;">DIAGNÓSTICO</button>
+    <button class="btn btn-outline btn-sm" id="tab-sim" onclick="showTab('sim')" style="flex:1; font-family:'Bebas Neue'; letter-spacing:2px;">SIMULAR</button>
+  </div>
+
+  <!-- TAB CONFIG -->
+  <div id="tab-content-config">
+    <div class="form-group">
+      <label class="form-label">ID FOSO (1-40)</label>
+      <input type="number" class="form-input" id="input-foso-id" min="1" max="40" placeholder="Introduce número de foso">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ROL DEL NODO</label>
+      <select class="form-select" id="input-rol">
+        <option value="DIANA">DIANA — Maestro de seguridad</option>
+        <option value="TIRADOR">TIRADOR — Esclavo</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">MAC NODO PAREJA</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="form-input" id="input-mac" placeholder="AA:BB:CC:DD:EE:FF" style="flex:1; font-size:0.85rem;">
+        <button class="btn btn-outline btn-sm" onclick="autoDiscoverMAC()" style="flex-shrink:0; font-family:'Bebas Neue'; letter-spacing:1px; padding: 0 14px;">AUTO</button>
+      </div>
+    </div>
+
+    <div id="discovery-status" style="display:none;" class="alert alert-amber">
+      🔍 Buscando nodo pareja por broadcast ESP-NOW...
+    </div>
+
+    <button class="btn btn-green" onclick="saveConfig()">
+      💾 GUARDAR Y REINICIAR
+    </button>
+
+    <button class="btn btn-outline" onclick="resetConfig()">
+      🗑 BORRAR CONFIGURACIÓN
+    </button>
+  </div>
+
+  <!-- TAB DIAGNÓSTICO -->
+  <div id="tab-content-diag" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="diag-rssi" style="color:var(--green);">—</div>
+        <div class="stat-label">RSSI (dBm)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="diag-pkt" style="color:var(--blue);">—</div>
+        <div class="stat-label">PKT PERDIDOS %</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="diag-latency" style="color:var(--amber);">—</div>
+        <div class="stat-label">LATENCIA ms</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="diag-uptime" style="color:var(--text2);">—</div>
+        <div class="stat-label">UPTIME h</div>
+      </div>
+    </div>
+
+    <div class="nodo-card">
+      <div class="rssi-bar-wrap">
+        <div class="rssi-label"><span>CALIDAD ENLACE ESP-NOW</span><span id="diag-quality-txt">—</span></div>
+        <div class="rssi-bar"><div class="rssi-fill" id="diag-quality-bar" style="width:0%; background:var(--green);"></div></div>
+      </div>
+    </div>
+
+    <div class="section-title">LOG EN TIEMPO REAL</div>
+    <div class="log-box" id="diag-log">
+      <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-msg info">Conecta a un nodo para ver el log</span></div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn btn-outline" onclick="refreshDiag()">🔄 ACTUALIZAR</button>
+    </div>
+
+    <div class="sep"></div>
+    <div class="section-title">TEST DE SEGURIDAD</div>
+    <div class="alert alert-red">
+      ⚠ Bloquea el firmware del ESP32 para verificar que el NE555 apaga la lámpara verde en menos de 11 segundos.
+    </div>
+    <button class="btn btn-red" onclick="testSeguridad()">
+      🔒 EJECUTAR TEST SEGURIDAD NE555
+    </button>
+    <div id="test-result" style="display:none;" class="alert alert-green"></div>
+  </div>
+
+  <!-- TAB SIMULACIÓN -->
+  <div id="tab-content-sim" style="display:none;">
+    <div class="sim-container">
+      <div class="sim-title" id="sim-title">MODO SIMULACIÓN</div>
+      <div class="sim-subtitle" id="sim-subtitle">PWA ACTÚA COMO NODO PAREJA</div>
+
+      <div class="sim-lamps">
+        <div class="sim-lamp-wrap">
+          <div class="sim-lamp off" id="sim-lamp-green"></div>
+          <div class="sim-lamp-label">VERDE</div>
+        </div>
+        <div class="sim-lamp-wrap">
+          <div class="sim-lamp off" id="sim-lamp-red"></div>
+          <div class="sim-lamp-label">ROJO</div>
+        </div>
+      </div>
+
+      <div id="sim-estado" style="text-align:center; font-family:'Share Tech Mono',monospace; font-size:0.75rem; color:var(--muted); margin-bottom:20px; letter-spacing:2px;">
+        ESPERANDO...
+      </div>
+
+      <!-- Botón principal de simulación -->
+      <button class="sim-btn" id="sim-main-btn" onclick="simMainAction()">
+        PULSAR
+      </button>
+
+      <button class="btn btn-outline" onclick="simReset()" style="margin-top:4px;">
+        ↺ REINICIAR SIMULACIÓN
+      </button>
+    </div>
+
+    <div class="section-title">LOG SIMULACIÓN</div>
+    <div class="log-box" id="sim-log">
+      <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-msg info">Inicia la simulación pulsando el botón</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SCREEN: CENTRAL -->
+<!-- ════════════════════════════════════════ -->
+<div class="screen" id="screen-central">
+  <button class="back-btn" onclick="goTo('screen-home')">← ATRÁS</button>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:3px; color:var(--blue);">CENTRAL</div>
+      <div style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:var(--muted);">DASHBOARD · 40 FOSOS</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="connectCentral()" style="font-family:'Bebas Neue'; letter-spacing:2px;">
+      📡 CONECTAR
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="central-ok" style="color:var(--green);">0</div>
+      <div class="stat-label">FOSOS OK</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="central-err" style="color:var(--red);">0</div>
+      <div class="stat-label">CON PROBLEMAS</div>
+    </div>
+  </div>
+
+  <div class="section-title">ESTADO POR FOSO</div>
+
+  <div class="fosos-grid" id="fosos-grid">
+    <!-- generado por JS -->
+  </div>
+
+  <div class="sep"></div>
+  <div class="section-title">CONTROL GLOBAL</div>
+  <button class="btn btn-amber" onclick="stopAll()">⏸ PARAR TODOS LOS FOSOS</button>
+  <button class="btn btn-green" onclick="resumeAll()">▶ REANUDAR TODOS LOS FOSOS</button>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SCREEN: FOSO DETAIL -->
+<!-- ════════════════════════════════════════ -->
+<div class="screen" id="screen-foso">
+  <button class="back-btn" onclick="goTo('screen-central')">← DASHBOARD</button>
+
+  <div class="foso-detail-header">
+    <div class="foso-detail-num" id="foso-detail-num">01</div>
+    <div class="foso-detail-info">
+      <h2>FOSO <span id="foso-detail-num2">01</span></h2>
+      <p id="foso-detail-status-txt">OPERATIVO</p>
+    </div>
+    <div id="foso-detail-badge" style="margin-left:auto;"></div>
+  </div>
+
+  <!-- Botones control foso -->
+  <button class="btn btn-amber" id="btn-stop-foso" onclick="toggleFoso()">⏸ PARAR FOSO</button>
+
+  <div class="sep"></div>
+
+  <!-- Nodo Diana -->
+  <div class="nodo-card diana">
+    <div class="nodo-card-header">
+      <div class="nodo-card-title">🎯 DIANA</div>
+      <button class="btn btn-outline btn-sm" onclick="connectNodoBLE('diana')" style="font-family:'Bebas Neue'; letter-spacing:1px;">BLE →</button>
+    </div>
+    <div class="rssi-bar-wrap">
+      <div class="rssi-label"><span>RSSI ENLACE</span><span id="foso-diana-rssi">— dBm</span></div>
+      <div class="rssi-bar"><div class="rssi-fill" id="foso-diana-bar" style="width:60%; background:var(--green);"></div></div>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">MAC</span>
+      <span class="info-row-value" id="foso-diana-mac" style="font-size:0.7rem;">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">ÚLTIMO HEARTBEAT</span>
+      <span class="info-row-value" id="foso-diana-hb">—</span>
+    </div>
+  </div>
+
+  <!-- Nodo Tirador -->
+  <div class="nodo-card tirador">
+    <div class="nodo-card-header">
+      <div class="nodo-card-title">🔫 TIRADOR</div>
+      <button class="btn btn-outline btn-sm" onclick="connectNodoBLE('tirador')" style="font-family:'Bebas Neue'; letter-spacing:1px;">BLE →</button>
+    </div>
+    <div class="rssi-bar-wrap">
+      <div class="rssi-label"><span>RSSI ENLACE</span><span id="foso-tirador-rssi">— dBm</span></div>
+      <div class="rssi-bar"><div class="rssi-fill" id="foso-tirador-bar" style="width:60%; background:var(--red);"></div></div>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">MAC</span>
+      <span class="info-row-value" id="foso-tirador-mac" style="font-size:0.7rem;">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">ÚLTIMO HEARTBEAT</span>
+      <span class="info-row-value" id="foso-tirador-hb">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// ESTADO GLOBAL
+// ════════════════════════════════════════════
+let currentScreen = 'screen-home';
+let currentRol = null; // 'diana' | 'tirador'
+let currentDevice = null;
+let selectedFoso = null;
+let fosoStopped = false;
+let simStep = 0;
+let simRol = null; // rol del NODO conectado
+let bleDevice = null;
+
+// Estado simulado de fosos para demo
+const fososData = Array.from({length: 40}, (_, i) => ({
+  id: i + 1,
+  status: i % 7 === 3 ? 'warning' : i % 13 === 0 ? 'error' : 'ok',
+  rssi_diana: -(35 + Math.floor(Math.random() * 50)),
+  rssi_tirador: -(35 + Math.floor(Math.random() * 50)),
+  mac_diana: randomMAC(),
+  mac_tirador: randomMAC(),
+  stopped: false
+}));
+
+function randomMAC() {
+  return Array.from({length:6}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0').toUpperCase()).join(':');
+}
+
+// ════════════════════════════════════════════
+// NAVEGACIÓN
+// ════════════════════════════════════════════
+function goTo(screenId) {
+  document.getElementById(currentScreen).classList.remove('active');
+  document.getElementById(screenId).classList.add('active');
+  currentScreen = screenId;
+  window.scrollTo(0, 0);
+}
+
+// ════════════════════════════════════════════
+// BLE STATUS
+// ════════════════════════════════════════════
+function setBleStatus(status, label) {
+  const dot = document.getElementById('bleDot');
+  const txt = document.getElementById('bleStatus');
+  dot.className = 'ble-dot ' + status;
+  txt.textContent = label;
+}
+
+// ════════════════════════════════════════════
+// SCAN BLE
+// ════════════════════════════════════════════
+function startScan(rol) {
+  currentRol = rol;
+  const spinnerId = `spinner-${rol}`;
+  const devicesId = `devices-${rol}`;
+  document.getElementById(spinnerId).style.display = 'block';
+  document.getElementById(devicesId).innerHTML = '';
+  setBleStatus('scanning', 'BUSCANDO...');
+
+  // Simular escaneo BLE
+  setTimeout(() => {
+    document.getElementById(spinnerId).style.display = 'none';
+    setBleStatus('', '');
+
+    const mockDevices = [
+      { name: 'FOSO_CONFIG', rssi: -45, configured: false },
+      { name: 'FOSO_01_DIANA', rssi: -38, configured: true },
+      { name: 'FOSO_02_TIRADOR', rssi: -62, configured: true },
+      { name: 'FOSO_05_DIANA', rssi: -71, configured: true },
+    ];
+
+    const container = document.getElementById(devicesId);
+    if (mockDevices.length === 0) {
+      container.innerHTML = '<div class="alert alert-amber">No se encontraron dispositivos BLE cercanos.</div>';
+      return;
+    }
+
+    mockDevices.forEach(dev => {
+      const rssiColor = dev.rssi > -60 ? 'var(--green)' : dev.rssi > -75 ? 'var(--amber)' : 'var(--red)';
+      const dotColor = dev.configured ? 'var(--green)' : 'var(--amber)';
+      const item = document.createElement('div');
+      item.className = 'scan-item';
+      item.innerHTML = `
+        <div class="scan-item-dot" style="background:${dotColor}; box-shadow: 0 0 6px ${dotColor};"></div>
+        <div>
+          <div class="scan-item-name">${dev.name}</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:var(--muted);">${dev.configured ? 'CONFIGURADO' : 'SIN CONFIGURAR'}</div>
+        </div>
+        <div class="scan-item-rssi" style="color:${rssiColor};">${dev.rssi} dBm</div>
+        <div style="color:var(--muted); font-size:1.1rem;">›</div>
+      `;
+      item.onclick = () => openNodo(dev, rol);
+      container.appendChild(item);
+    });
+  }, 2000);
+}
+
+// ════════════════════════════════════════════
+// ABRIR NODO
+// ════════════════════════════════════════════
+function openNodo(device, rol) {
+  currentDevice = device;
+  simRol = rol;
+
+  // Icono y título
+  document.getElementById('config-nodo-icon').textContent = rol === 'diana' ? '🎯' : '🔫';
+  const color = rol === 'diana' ? 'var(--green)' : 'var(--red)';
+  document.getElementById('config-nodo-title').style.color = color;
+  document.getElementById('config-nodo-title').textContent = device.name;
+  document.getElementById('config-nodo-mac').textContent = 'MAC: ' + randomMAC();
+
+  // Badge
+  const badge = device.configured ?
+    '<span class="badge badge-green">● CONFIGURADO</span>' :
+    '<span class="badge badge-amber">● SIN CONFIGURAR</span>';
+  document.getElementById('config-nodo-badge').innerHTML = badge;
+
+  // Botón back
+  document.getElementById('config-back-btn').onclick = () => goTo(rol === 'diana' ? 'screen-scan-diana' : 'screen-scan-tirador');
+
+  // Rol en select
+  document.getElementById('input-rol').value = rol.toUpperCase();
+
+  // Simulación título
+  document.getElementById('sim-title').textContent = rol === 'diana' ? 'SIMULAR TIRADOR' : 'SIMULAR DIANA';
+  document.getElementById('sim-subtitle').textContent = rol === 'diana' ? 'PWA ACTÚA COMO NODO TIRADOR' : 'PWA ACTÚA COMO NODO DIANA';
+
+  // Reset simulación
+  simReset();
+
+  // Tab por defecto
+  showTab('config');
+
+  setBleStatus('connected', device.name.substring(0, 10));
+  goTo('screen-config-nodo');
+  showToast('Conectado a ' + device.name, 'success');
+}
+
+// ════════════════════════════════════════════
+// TABS CONFIG NODO
+// ════════════════════════════════════════════
+function showTab(tab) {
+  ['config', 'diag', 'sim'].forEach(t => {
+    document.getElementById('tab-content-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('tab-' + t);
+    btn.style.borderColor = t === tab ? 'var(--green)' : 'var(--border2)';
+    btn.style.color = t === tab ? 'var(--green)' : 'var(--text2)';
+  });
+
+  if (tab === 'diag') refreshDiag();
+}
+
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+function saveConfig() {
+  const id = document.getElementById('input-foso-id').value;
+  const rol = document.getElementById('input-rol').value;
+  const mac = document.getElementById('input-mac').value;
+
+  if (!id || id < 1 || id > 40) {
+    showToast('ID de foso inválido (1-40)', 'error');
+    return;
+  }
+
+  // Aquí iría el envío BLE real
+  showToast('Configuración guardada · Reiniciando...', 'success');
+  setTimeout(() => {
+    if (currentDevice) currentDevice.configured = true;
+    const newName = `FOSO_${String(id).padStart(2,'0')}_${rol}`;
+    document.getElementById('config-nodo-title').textContent = newName;
+    document.getElementById('config-nodo-badge').innerHTML = '<span class="badge badge-green">● CONFIGURADO</span>';
+    setBleStatus('connected', newName.substring(0, 12));
+  }, 1500);
+}
+
+function resetConfig() {
+  if (confirm('¿Borrar configuración del nodo?')) {
+    showToast('Configuración borrada · Reiniciando...', 'error');
+  }
+}
+
+function autoDiscoverMAC() {
+  document.getElementById('discovery-status').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('discovery-status').style.display = 'none';
+    document.getElementById('input-mac').value = randomMAC();
+    showToast('Nodo pareja encontrado', 'success');
+  }, 3000);
+}
+
+// ════════════════════════════════════════════
+// DIAGNÓSTICO
+// ════════════════════════════════════════════
+function refreshDiag() {
+  const rssi = -(35 + Math.floor(Math.random() * 40));
+  const pkt = Math.floor(Math.random() * 3);
+  const lat = 2 + Math.floor(Math.random() * 8);
+  const uptime = Math.floor(Math.random() * 48);
+
+  document.getElementById('diag-rssi').textContent = rssi;
+  document.getElementById('diag-pkt').textContent = pkt + '%';
+  document.getElementById('diag-latency').textContent = lat;
+  document.getElementById('diag-uptime').textContent = uptime + 'h';
+
+  const quality = Math.min(100, Math.max(0, (rssi + 100) * 2));
+  document.getElementById('diag-quality-bar').style.width = quality + '%';
+  document.getElementById('diag-quality-bar').style.background = quality > 60 ? 'var(--green)' : quality > 30 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('diag-quality-txt').textContent = quality + '%';
+
+  addLog('diag-log', `RSSI ${rssi}dBm · PKT ${pkt}% · LAT ${lat}ms`, 'ok');
+}
+
+function testSeguridad() {
+  showToast('Enviando orden de bloqueo...', '');
+  addLog('diag-log', 'TEST SEGURIDAD INICIADO · Bloqueando firmware...', 'warn');
+
+  const start = Date.now();
+  const result = document.getElementById('test-result');
+  result.style.display = 'none';
+
+  // Simular que la lámpara verde se apaga
+  const interval = setInterval(() => {
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    addLog('diag-log', `Esperando apagado lámpara verde... ${elapsed}s`, 'info');
+  }, 2000);
+
+  setTimeout(() => {
+    clearInterval(interval);
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    result.style.display = 'block';
+    result.className = 'alert alert-green';
+    result.textContent = `✓ LÁMPARA VERDE APAGADA en ${elapsed}s · NE555 funcionando correctamente`;
+    addLog('diag-log', `TEST OK · Lámpara apagada en ${elapsed}s`, 'ok');
+  }, 9000 + Math.random() * 2000);
+}
+
+// ════════════════════════════════════════════
+// SIMULACIÓN
+// ════════════════════════════════════════════
+// simRol = rol del NODO FÍSICO conectado
+// La PWA simula el rol CONTRARIO
+
+function simReset() {
+  simStep = 0;
+  setLamp('green', false);
+  setLamp('red', false);
+  document.getElementById('sim-estado').textContent = 'ESPERANDO...';
+  document.getElementById('sim-main-btn').textContent = 'PULSAR';
+  document.getElementById('sim-main-btn').className = 'sim-btn';
+  const log = document.getElementById('sim-log');
+  if (log) log.innerHTML = '<div class="log-entry"><span class="log-time">--:--:--</span><span class="log-msg info">Simulación reiniciada</span></div>';
+}
+
+function simMainAction() {
+  if (simRol === 'diana') {
+    // Nodo físico = DIANA · PWA simula TIRADOR
+    simAsTirador();
+  } else {
+    // Nodo físico = TIRADOR · PWA simula DIANA
+    simAsDiana();
+  }
+}
+
+function simAsDiana() {
+  // PWA actúa como DIANA · nodo físico es el TIRADOR
+  if (simStep === 0) {
+    // Diana (PWA) pulsa: autoriza disparo
+    addLog('sim-log', 'PWA→DIANA: enviando VERDE al tirador', 'ok');
+    setLamp('red', true);   // diana se pone rojo (confirmación)
+    setLamp('green', false);
+    document.getElementById('sim-estado').textContent = 'DIANA AUTORIZÓ · ESPERANDO DISPARO';
+    document.getElementById('sim-main-btn').textContent = 'CANCELAR';
+    document.getElementById('sim-main-btn').className = 'sim-btn active-red';
+    simStep = 1;
+    addLog('sim-log', 'Nodo tirador debería ponerse en VERDE', 'info');
+  } else if (simStep === 1) {
+    // Cancelar
+    simReset();
+    addLog('sim-log', 'Simulación cancelada', 'warn');
+  } else if (simStep === 2) {
+    // Diana recibió DISPARO → envía ROJO al tirador
+    addLog('sim-log', 'PWA→DIANA: recibió DISPARO · enviando ROJO', 'ok');
+    setLamp('green', true);  // diana verde (toca cambiar)
+    setLamp('red', false);
+    document.getElementById('sim-estado').textContent = 'DISPARO RECIBIDO · CAMBIA DIANA';
+    document.getElementById('sim-main-btn').textContent = 'DIANA CAMBIADA';
+    document.getElementById('sim-main-btn').className = 'sim-btn active-green';
+    simStep = 3;
+  } else if (simStep === 3) {
+    simReset();
+    addLog('sim-log', 'Ciclo completado ✓', 'ok');
+    showToast('Ciclo completo · Todo OK', 'success');
+  }
+}
+
+function simAsTirador() {
+  // PWA actúa como TIRADOR · nodo físico es DIANA
+  if (simStep === 0) {
+    // Esperando que el nodo DIANA físico pulse
+    addLog('sim-log', 'Esperando que el nodo diana pulse...', 'info');
+    document.getElementById('sim-estado').textContent = 'PULSA EL PULSADOR DEL NODO DIANA';
+    document.getElementById('sim-main-btn').textContent = 'SIMULAR DISPARO';
+    document.getElementById('sim-main-btn').className = 'sim-btn';
+    simStep = 1;
+    // Simular recepción VERDE del nodo diana después de 2s
+    setTimeout(() => {
+      if (simStep !== 1) return;
+      addLog('sim-log', 'VERDE recibido del nodo diana', 'ok');
+      setLamp('green', true);
+      setLamp('red', false);
+      document.getElementById('sim-estado').textContent = 'VERDE · AUTORIZADO DISPARAR';
+      document.getElementById('sim-main-btn').className = 'sim-btn active-green';
+    }, 2000);
+  } else if (simStep === 1) {
+    // Tirador (PWA) dispara
+    addLog('sim-log', 'PWA→TIRADOR: enviando DISPARO al diana', 'ok');
+    setLamp('green', false);
+    setLamp('red', true);
+    document.getElementById('sim-estado').textContent = 'DISPARO ENVIADO · ESPERANDO ROJO';
+    document.getElementById('sim-main-btn').textContent = 'ESPERA...';
+    document.getElementById('sim-main-btn').className = 'sim-btn';
+    simStep = 2;
+    // Simular recepción ROJO del nodo diana
+    setTimeout(() => {
+      addLog('sim-log', 'ROJO recibido del nodo diana · Ciclo OK', 'ok');
+      document.getElementById('sim-estado').textContent = 'CICLO COMPLETADO ✓';
+      document.getElementById('sim-main-btn').textContent = 'REINICIAR';
+      document.getElementById('sim-main-btn').className = 'sim-btn active-green';
+      simStep = 3;
+      showToast('Ciclo completo · Todo OK', 'success');
+    }, 2000);
+  } else if (simStep === 3) {
+    simReset();
+  }
+}
+
+// Señal externa del nodo físico (se llamaría desde BLE callback real)
+function simReceiveFromNodo(msg) {
+  if (msg === 'DISPARO' && simRol === 'diana' && simStep === 1) {
+    simStep = 2;
+    simAsDiana();
+  }
+}
+
+function setLamp(color, on) {
+  const lamp = document.getElementById('sim-lamp-' + color);
+  if (on) {
+    lamp.className = 'sim-lamp ' + color + '-on';
+  } else {
+    lamp.className = 'sim-lamp off';
+  }
+}
+
+// ════════════════════════════════════════════
+// CENTRAL / DASHBOARD
+// ════════════════════════════════════════════
+function buildFososGrid() {
+  const grid = document.getElementById('fosos-grid');
+  grid.innerHTML = '';
+  let ok = 0, err = 0;
+
+  fososData.forEach(foso => {
+    const status = foso.stopped ? 'stopped' : foso.status;
+    if (status === 'ok') ok++;
+    if (status === 'error') err++;
+
+    const tile = document.createElement('div');
+    tile.className = 'foso-tile ' + status;
+    tile.innerHTML = `
+      <div class="foso-num">${String(foso.id).padStart(2,'0')}</div>
+      <div class="foso-rssi">${foso.rssi_diana}dBm</div>
+      <div class="foso-indicator"></div>
+    `;
+    tile.onclick = () => openFoso(foso.id);
+    grid.appendChild(tile);
+  });
+
+  document.getElementById('central-ok').textContent = ok;
+  document.getElementById('central-err').textContent = err;
+}
+
+function connectCentral() {
+  setBleStatus('scanning', 'BUSCANDO...');
+  showToast('Buscando ESP32 CENTRAL...', '');
+  setTimeout(() => {
+    setBleStatus('connected', 'CENTRAL');
+    showToast('Conectado al central', 'success');
+    buildFososGrid();
+  }, 2000);
+}
+
+function openFoso(id) {
+  selectedFoso = fososData.find(f => f.id === id);
+  fosoStopped = selectedFoso.stopped;
+
+  const numStr = String(id).padStart(2, '0');
+  document.getElementById('foso-detail-num').textContent = numStr;
+  document.getElementById('foso-detail-num2').textContent = numStr;
+
+  const status = fosoStopped ? 'PARADO' : selectedFoso.status === 'ok' ? 'OPERATIVO' : selectedFoso.status === 'warning' ? 'SEÑAL DÉBIL' : 'ERROR';
+  document.getElementById('foso-detail-status-txt').textContent = status;
+
+  const badgeClass = fosoStopped ? 'badge-amber' : selectedFoso.status === 'ok' ? 'badge-green' : selectedFoso.status === 'warning' ? 'badge-amber' : 'badge-red';
+  document.getElementById('foso-detail-badge').innerHTML = `<span class="badge ${badgeClass}">● ${status}</span>`;
+
+  document.getElementById('btn-stop-foso').textContent = fosoStopped ? '▶ REANUDAR FOSO' : '⏸ PARAR FOSO';
+  document.getElementById('btn-stop-foso').className = fosoStopped ? 'btn btn-green' : 'btn btn-amber';
+
+  document.getElementById('foso-diana-rssi').textContent = selectedFoso.rssi_diana + ' dBm';
+  document.getElementById('foso-tirador-rssi').textContent = selectedFoso.rssi_tirador + ' dBm';
+  document.getElementById('foso-diana-mac').textContent = selectedFoso.mac_diana;
+  document.getElementById('foso-tirador-mac').textContent = selectedFoso.mac_tirador;
+  document.getElementById('foso-diana-hb').textContent = 'hace ' + Math.floor(Math.random()*3) + 's';
+  document.getElementById('foso-tirador-hb').textContent = 'hace ' + Math.floor(Math.random()*3) + 's';
+
+  const dianaQ = Math.min(100, Math.max(0, (selectedFoso.rssi_diana + 100) * 2));
+  const tiradorQ = Math.min(100, Math.max(0, (selectedFoso.rssi_tirador + 100) * 2));
+  document.getElementById('foso-diana-bar').style.width = dianaQ + '%';
+  document.getElementById('foso-tirador-bar').style.width = tiradorQ + '%';
+
+  goTo('screen-foso');
+}
+
+function toggleFoso() {
+  if (!selectedFoso) return;
+  fosoStopped = !fosoStopped;
+  selectedFoso.stopped = fosoStopped;
+
+  document.getElementById('btn-stop-foso').textContent = fosoStopped ? '▶ REANUDAR FOSO' : '⏸ PARAR FOSO';
+  document.getElementById('btn-stop-foso').className = fosoStopped ? 'btn btn-green' : 'btn btn-amber';
+
+  const msg = fosoStopped ? 'Foso ' + selectedFoso.id + ' PARADO · Lámparas parpadeando' : 'Foso ' + selectedFoso.id + ' REANUDADO';
+  showToast(msg, fosoStopped ? 'error' : 'success');
+}
+
+function stopAll() {
+  fososData.forEach(f => f.stopped = true);
+  buildFososGrid();
+  showToast('Todos los fosos PARADOS', 'error');
+}
+
+function resumeAll() {
+  fososData.forEach(f => f.stopped = false);
+  buildFososGrid();
+  showToast('Todos los fosos REANUDADOS', 'success');
+}
+
+function connectNodoBLE(rol) {
+  showToast('Conectando por BLE al nodo ' + rol.toUpperCase() + '...', '');
+  setTimeout(() => {
+    const mockDev = { name: `FOSO_${String(selectedFoso.id).padStart(2,'0')}_${rol.toUpperCase()}`, configured: true };
+    openNodo(mockDev, rol);
+  }, 1500);
+}
+
+// ════════════════════════════════════════════
+// LOG
+// ════════════════════════════════════════════
+function addLog(containerId, msg, type) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  const now = new Date();
+  const time = now.toTimeString().substring(0, 8);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${msg}</span>`;
+  box.appendChild(entry);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Init
+buildFososGrid();
+</script>
+<script>
+// Registro Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/dianet/sw.js")
+      .then(reg => console.log("[DIANET] SW registrado:", reg.scope))
+      .catch(err => console.warn("[DIANET] SW error:", err));
+  });
+}
+</script>
+</body>
+</html>
