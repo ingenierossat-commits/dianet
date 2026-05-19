@@ -608,6 +608,8 @@ async function calibrar() {
 
 // ── NOTIFICACIÓN STATUS ──
 function onStatus(e) {
+  const texto = new TextDecoder().decode(e.target.value);
+  console.log('STATUS RECIBIDO:', texto);
   try {
     const d = JSON.parse(new TextDecoder().decode(e.target.value));
 
