@@ -1,0 +1,1431 @@
+<!-- DIANET PWA v7.6 -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#080c0e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>DIANET</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
+
+:root {
+  --bg:      #080c0e;
+  --surface: #0e1518;
+  --card:    #131a1e;
+  --border:  #1e2d33;
+  --green:   #00e676;
+  --red:     #ff3d3d;
+  --amber:   #ffab00;
+  --blue:    #29b6f6;
+  --text:    #cdd8de;
+  --muted:   #4a6472;
+  --text2:   #7a9aaa;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; min-height: 100vh; }
+
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,12,14,0.97); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px; display: flex; align-items: center;
+  justify-content: space-between; height: 100px;
+}
+.ble-status { display: flex; align-items: center; gap: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+.ble-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.ble-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 2s infinite; }
+.ble-dot.scanning  { background: var(--amber); box-shadow: 0 0 8px var(--amber); animation: blink 0.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.screen { display: none; padding: 20px; min-height: calc(100vh - 100px); }
+.screen.active { display: block; animation: fi 0.25s ease; }
+@keyframes fi { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 6px; border: none; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 3px; cursor: pointer; transition: all 0.15s; width: 100%; margin-bottom: 10px; }
+.btn:active { transform: scale(0.97); }
+.btn-green  { background: var(--green); color: #000; }
+.btn-red    { background: var(--red);   color: #fff; }
+.btn-blue   { background: var(--blue);  color: #000; }
+.btn-amber  { background: var(--amber); color: #000; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; margin-bottom: 0; }
+
+.home-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 22px 20px; margin-bottom: 14px; display: flex; align-items: center; gap: 18px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.home-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:8px 0 0 8px; }
+.home-card.central::before { background: var(--blue); }
+.home-card.diana::before   { background: var(--green); }
+.home-card.tirador::before { background: var(--red); }
+.home-card:active { transform: scale(0.98); }
+.card-icon { width:52px; height:52px; display:flex; align-items:center; justify-content:center; border-radius:8px; flex-shrink:0; }
+.central .card-icon { background: rgba(41,182,246,0.1); }
+.diana   .card-icon { background: rgba(0,230,118,0.1); }
+.tirador .card-icon { background: rgba(255,61,61,0.1); }
+.card-text h3 { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:3px; margin-bottom:2px; }
+.central .card-text h3 { color: var(--blue); }
+.diana   .card-text h3 { color: var(--green); }
+.tirador .card-text h3 { color: var(--red); }
+.card-text p { font-size:0.78rem; color:var(--text2); font-family:'Share Tech Mono',monospace; margin-top:2px; }
+
+.back-btn { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border); color:var(--text); font-family:'Share Tech Mono',monospace; font-size:0.75rem; letter-spacing:2px; cursor:pointer; padding:10px 16px; margin-bottom:24px; border-radius:6px; width:100%; }
+.back-btn:active { background:var(--border); }
+.back-btn::before { content:'←'; font-size:1rem; color:var(--green); }
+
+.sec-title { font-family:'Share Tech Mono',monospace; font-size:0.65rem; letter-spacing:4px; color:var(--muted); margin:24px 0 12px; display:flex; align-items:center; gap:10px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.tabs { display:flex; gap:6px; margin-bottom:20px; }
+.tab { flex:1; padding:8px; border:1px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; font-family:'Bebas Neue',sans-serif; font-size:0.9rem; letter-spacing:2px; border-radius:4px; text-align:center; }
+.tab.active { border-color:var(--green); color:var(--green); background:transparent; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-family:'Share Tech Mono',monospace; font-size:0.68rem; letter-spacing:2px; color:var(--muted); margin-bottom:6px; }
+.form-input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px 14px; color:var(--text); font-family:'Share Tech Mono',monospace; font-size:1rem; outline:none; }
+.form-input:focus { border-color:var(--green); }
+
+.slider-row { display:flex; align-items:center; gap:10px; margin-top:6px; }
+.slider-row span { font-family:'Share Tech Mono',monospace; font-size:0.7rem; color:var(--muted); white-space:nowrap; }
+.slider-val { color:var(--green); min-width:36px; text-align:right; }
+input[type=range] { flex:1; accent-color:var(--green); }
+
+.alert { padding:12px 16px; border-radius:6px; font-family:'Share Tech Mono',monospace; font-size:0.75rem; margin-bottom:16px; line-height:1.6; }
+.alert-amber { background:rgba(255,171,0,0.08); border:1px solid rgba(255,171,0,0.3); color:var(--amber); }
+.alert-green { background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.3); color:var(--green); }
+.alert-blue  { background:rgba(41,182,246,0.08); border:1px solid rgba(41,182,246,0.3); color:var(--blue); }
+
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+.stat-val { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; margin-bottom:4px; }
+.stat-label { font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:var(--muted); letter-spacing:2px; }
+
+.log-box { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px; font-family:'Share Tech Mono',monospace; font-size:0.7rem; color:var(--text2); height:120px; overflow-y:auto; line-height:1.8; }
+
+.rssi-wrap { margin-bottom:12px; }
+.rssi-labels { display:flex; justify-content:space-between; font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:var(--muted); margin-bottom:4px; }
+.rssi-bar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.rssi-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+
+.fosos-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:20px; }
+.foso-tile { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:8px 4px; text-align:center; cursor:pointer; }
+.foso-tile.ok      { border-color:rgba(0,230,118,0.3); }
+.foso-tile.error   { border-color:rgba(255,61,61,0.4); }
+.foso-tile.stopped { border-color:rgba(255,171,0,0.4); background:rgba(255,171,0,0.05); }
+.foso-num { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; }
+.foso-tile.ok      .foso-num { color:var(--green); }
+.foso-tile.error   .foso-num { color:var(--red); }
+.foso-tile.stopped .foso-num { color:var(--amber); }
+.foso-dot { width:5px; height:5px; border-radius:50%; margin:3px auto 0; }
+.foso-tile.ok      .foso-dot { background:var(--green); box-shadow:0 0 4px var(--green); }
+.foso-tile.error   .foso-dot { background:var(--red); }
+.foso-tile.stopped .foso-dot { background:var(--amber); }
+
+.badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:0.65rem; }
+.badge-green { background:rgba(0,230,118,0.08); color:var(--green); border:1px solid rgba(0,230,118,0.2); }
+.badge-amber { background:rgba(255,171,0,0.08);  color:var(--amber); border:1px solid rgba(255,171,0,0.2); }
+
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px 20px; font-family:'Share Tech Mono',monospace; font-size:0.8rem; color:var(--text); transition:transform 0.3s ease; z-index:500; white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.ok  { border-color:var(--green); color:var(--green); }
+.toast.err { border-color:var(--red);   color:var(--red); }
+
+.sep { height:1px; background:var(--border); margin:20px 0; }
+
+.rol-badge { padding:10px 16px; border-radius:6px; margin-bottom:16px; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:2px; }
+.rol-badge.diana   { background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.3); color:var(--green); }
+.rol-badge.tirador { background:rgba(255,61,61,0.08);  border:1px solid rgba(255,61,61,0.3);  color:var(--red); }
+.rol-badge.central { background:rgba(41,182,246,0.08); border:1px solid rgba(41,182,246,0.3); color:var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="icons/icon-192.png" style="height:80px; border-radius:8px;">
+  <div class="ble-status">
+    <div class="ble-dot" id="bleDot"></div>
+    <span id="bleStatus">BLE OFF</span>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen active" id="scr-home">
+  <div class="sec-title">SELECCIONAR MODO</div>
+
+  <div class="home-card central" onclick="conectarCentral()">
+    <div class="card-icon">📡</div>
+    <div class="card-text">
+      <h3>CENTRAL</h3>
+      <p id="home-central-info">Pulsa para conectar</p>
+    </div>
+    <span style="margin-left:auto;color:var(--muted)">›</span>
+  </div>
+
+  <div class="home-card diana" onclick="irAScan('diana')">
+    <div class="card-icon">
+      <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="14" fill="none" stroke="#ff3d3d" stroke-width="2"/>
+        <circle cx="18" cy="18" r="9"  fill="none" stroke="#ff3d3d" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="4"  fill="none" stroke="#ff3d3d" stroke-width="1.5"/>
+        <line x1="2"  y1="18" x2="10" y2="18" stroke="#ff3d3d" stroke-width="2" stroke-linecap="round"/>
+        <line x1="26" y1="18" x2="34" y2="18" stroke="#ff3d3d" stroke-width="2" stroke-linecap="round"/>
+        <line x1="18" y1="2"  x2="18" y2="10" stroke="#ff3d3d" stroke-width="2" stroke-linecap="round"/>
+        <line x1="18" y1="26" x2="18" y2="34" stroke="#ff3d3d" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="card-text">
+      <h3>MÓDULO DIANA</h3>
+      <p>Configurar · Diagnosticar</p>
+    </div>
+    <span style="margin-left:auto;color:var(--muted)">›</span>
+  </div>
+
+  <div class="home-card tirador" onclick="irAScan('tirador')">
+    <div class="card-icon"><i class="fa-solid fa-person-rifle" style="font-size:1.8rem;color:#ff3d3d;"></i></div>
+    <div class="card-text">
+      <h3>MÓDULO TIRADOR</h3>
+      <p>Configurar · Diagnosticar</p>
+    </div>
+    <span style="margin-left:auto;color:var(--muted)">›</span>
+  </div>
+
+  <div class="home-card" style="border-color:rgba(188,140,255,0.3);" onclick="goTo('scr-registro')">
+    <div class="card-icon" style="background:rgba(188,140,255,0.1); font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:2px; color:#bc8cff;">MAC</div>
+    <div class="card-text">
+      <h3 style="color:#bc8cff;">REGISTRO DE MÓDULOS</h3>
+      <p>Consultar · Verificar MACs</p>
+    </div>
+    <span style="margin-left:auto;color:var(--muted)">›</span>
+  </div>
+
+  <div class="sep"></div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--muted);">DIANET v7.6</div>
+</div>
+
+<!-- SCAN -->
+<div class="screen" id="scr-scan">
+  <button class="back-btn" onclick="goTo('scr-home')"> ATRÁS</button>
+  <div class="sec-title" id="scan-title">MÓDULO</div>
+
+  <div class="alert alert-blue">
+    📱 Antes de escanear activa:<br>
+    &nbsp;&nbsp;• <strong>Bluetooth</strong> del teléfono<br>
+    &nbsp;&nbsp;• <strong>Ubicación/GPS</strong> del teléfono
+  </div>
+
+  <div class="alert alert-amber">
+    ⚠ Toca ambos cuernos hasta que las lámparas roja y verde parpadeen alternativamente. Luego pulsa ESCANEAR.
+  </div>
+
+  <button class="btn btn-green" id="scan-btn" onclick="escanear()">🔍 ESCANEAR DISPOSITIVOS BLE</button>
+  <div id="scan-status" style="text-align:center;font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--muted);margin-top:12px;"></div>
+</div>
+
+<!-- NODO -->
+<div class="screen" id="scr-nodo">
+  <button class="back-btn" id="btn-desconectar" onclick="desconectar()"> DESCONECTAR</button>
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <div style="flex:1;">
+      <div id="nodo-nombre" style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted);">Dispositivo BLE conectado</div>
+    </div>
+    <div id="nodo-badge"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('config')">CONFIG</button>
+    <button class="tab" onclick="showTab('diag')">DIAGNÓSTICO</button>
+  </div>
+
+  <!-- TAB CONFIG -->
+  <div class="tab-content active" id="tab-config">
+
+    <!-- Rol fijo desde home, no editable -->
+    <input type="hidden" id="cfg-rol" value="1">
+    <div class="rol-badge diana" id="cfg-rol-badge">🎯 MÓDULO DIANA</div>
+
+    <div class="form-group">
+      <label class="form-label">ID CALLE (1-100)</label>
+      <input type="number" class="form-input" id="cfg-id" min="1" max="100" placeholder="Número de calle" oninput="marcarCambio()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" id="cfg-mac-label">MAC DEL TIRADOR PAREJA</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="form-input" id="cfg-mac" placeholder="AA:BB:CC:DD:EE:FF" style="font-size:0.9rem;flex:1;" oninput="marcarCambio()">
+        <button id="btn-buscar-mac" class="btn btn-blue btn-sm" style="font-family:'Bebas Neue';letter-spacing:2px;white-space:nowrap;" onclick="buscarMac()">🔍 BUSCAR</button>
+      </div>
+      <div id="mac-status" style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;margin-top:6px;"></div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="sec-title">SENSORES TOUCH</div>
+
+    <div class="form-group">
+      <label class="form-label">UMBRAL DE DETECCIÓN</label>
+      <div class="slider-row">
+        <span>200</span>
+        <input type="range" id="sl-umbral" min="200" max="800" value="500" oninput="sv('umbral',this.value,v=>v); marcarCambio();">
+        <span>800</span>
+        <span class="slider-val" id="sv-umbral">500</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">TIEMPO HOLD TOUCH PARA ACTIVAR BLE (segundos)</label>
+      <div class="slider-row">
+        <span>2s</span>
+        <input type="range" id="sl-hold" min="2000" max="10000" step="1000" value="5000" oninput="sv('hold',this.value,v=>Math.round(v/1000)+'s'); marcarCambio();">
+        <span>10s</span>
+        <span class="slider-val" id="sv-hold">5s</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">TIMEOUT ESPERA CONEXIÓN BLE (segundos)</label>
+      <div class="slider-row">
+        <span>30s</span>
+        <input type="range" id="sl-tble" min="30000" max="120000" step="10000" value="60000" oninput="sv('tble',this.value,v=>Math.round(v/1000)+'s'); marcarCambio();">
+        <span>120s</span>
+        <span class="slider-val" id="sv-tble">60s</span>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <button class="btn btn-green" onclick="guardarConfig()">💾 GUARDAR</button>
+    <button class="btn btn-outline" onclick="borrarConfig()">🗑 VALORES DE FÁBRICA</button>
+  </div>
+
+  <!-- TAB DIAGNÓSTICO -->
+  <div class="tab-content" id="tab-diag">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="dg-fw" style="color:var(--blue);font-size:1.2rem;">—</div><div class="stat-label">VERSIÓN FW</div></div>
+      <div class="stat-card"><div class="stat-val" id="dg-rei" style="color:var(--amber);">—</div><div class="stat-label">REINICIOS</div></div>
+      <div class="stat-card"><div class="stat-val" id="dg-up"  style="color:var(--text2);">—</div><div class="stat-label">UPTIME</div></div>
+      <div class="stat-card"><div class="stat-val" id="dg-pkt" style="color:var(--red);">—</div><div class="stat-label">PKT PERDIDOS</div></div>
+    </div>
+
+    <div class="rssi-wrap">
+      <div class="rssi-labels"><span>CALIDAD ENLACE ESP-NOW</span><span id="dg-enlace-txt">—</span></div>
+      <div class="rssi-bar"><div class="rssi-fill" id="dg-enlace-bar" style="width:0%;background:var(--green);"></div></div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="sec-title">CALIBRACIÓN TOUCH</div>
+    <div class="alert alert-amber">⚠ No toque los sensores táctiles durante la calibración.</div>
+
+    <div class="rssi-wrap">
+      <div class="rssi-labels"><span>SENSOR 1 (IO4)</span><span id="dg-t1">—</span></div>
+      <div class="rssi-bar"><div class="rssi-fill" id="dg-t1-bar" style="width:0%;background:var(--blue);"></div></div>
+    </div>
+    <div class="rssi-wrap">
+      <div class="rssi-labels"><span>SENSOR 2 (IO27)</span><span id="dg-t2">—</span></div>
+      <div class="rssi-bar"><div class="rssi-fill" id="dg-t2-bar" style="width:0%;background:var(--blue);"></div></div>
+    </div>
+
+    <button class="btn btn-blue" onclick="calibrar()">🎯 CALIBRAR SENSORES</button>
+    <div id="cal-result" style="display:none;margin-top:10px;" class="alert alert-green"></div>
+
+    <div class="sep"></div>
+    <div class="sec-title">TEST PULSADOR</div>
+    <div id="btn-pulsador"
+      style="width:100%; padding:30px; border-radius:8px; background:#0d1117; border:2px solid var(--border); font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:3px; color:var(--muted); text-align:center; margin-bottom:10px; transition:all 0.2s;">
+      PULSADOR SUELTO
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" style="flex:1;font-family:'Bebas Neue';letter-spacing:2px;" onclick="activarMonitorPulsador()">▶ INICIAR MONITOR</button>
+      <button class="btn btn-outline btn-sm" style="flex:1;font-family:'Bebas Neue';letter-spacing:2px;" onclick="pararMonitorPulsador()">■ PARAR</button>
+    </div>
+
+    <div class="sep"></div>
+    <div class="sec-title">LOG EN TIEMPO REAL</div>
+    <div class="log-box" id="dg-log"><span style="color:var(--blue);">Conectado — esperando datos...</span></div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-outline btn-sm" style="font-family:'Bebas Neue';letter-spacing:2px;" onclick="cmd('RESET_REINICIOS')">↺ RESET REINICIOS</button>
+    </div>
+  </div>
+</div>
+
+<!-- CENTRAL -->
+<div class="screen" id="scr-central">
+  <button class="back-btn" onclick="desconectarCentral()"> ATRÁS</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;color:var(--blue);">CENTRAL</div>
+      <div id="central-nombre" style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted);">CONECTADO</div>
+    </div>
+    <button onclick="goTo('scr-cfg-central')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">⚙️</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar" style="margin-bottom:16px;">
+    <button class="tab-btn active" id="tab-c-fosos" onclick="tabCentral('fosos')">FOSOS</button>
+    <button class="tab-btn" id="tab-c-diag" onclick="tabCentral('diag')">DIAGNÓSTICO</button>
+  </div>
+
+  <!-- TAB FOSOS -->
+  <div id="tab-central-fosos">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div id="central-label" style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--muted);">FOSOS CONFIGURADOS</div>
+      <button class="btn btn-outline btn-sm" onclick="refrescarFosos()" style="font-family:'Bebas Neue';letter-spacing:2px;">↺ REFRESCAR</button>
+    </div>
+    <div id="central-vacio" style="display:none;">
+      <div class="alert alert-amber" style="text-align:center;padding:24px;">
+        <div style="font-size:2rem;margin-bottom:8px;">📡</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;">SIN FOSOS EN FIREBASE</div>
+        <div style="font-size:0.75rem;margin-top:8px;">Registra módulos en el Registro de Módulos</div>
+      </div>
+    </div>
+    <div class="fosos-grid" id="fosos-grid"></div>
+  </div>
+
+  <!-- TAB DIAGNÓSTICO -->
+  <div id="tab-central-diag" style="display:none;">
+    <div class="diag-row"><span class="diag-lbl">FIRMWARE</span><span class="diag-val" id="cdg-fw">—</span></div>
+    <div class="diag-row"><span class="diag-lbl">UPTIME</span><span class="diag-val" id="cdg-up">—</span></div>
+    <div class="diag-row"><span class="diag-lbl">REINICIOS</span><span class="diag-val" id="cdg-rei">—</span></div>
+    <div class="diag-row"><span class="diag-lbl">FOSOS ACTIVOS</span><span class="diag-val" id="cdg-fosos">—</span></div>
+    <div class="diag-row"><span class="diag-lbl">IP ETHERNET</span><span class="diag-val" id="cdg-ip">—</span></div>
+    <div style="margin-top:12px;">
+      <div class="diag-lbl" style="margin-bottom:6px;">CALIDAD ENLACE</div>
+      <div style="background:var(--surface2);border-radius:4px;height:12px;overflow:hidden;">
+        <div id="cdg-enlace-bar" style="height:100%;width:10%;background:var(--red);transition:width 0.5s,background 0.5s;"></div>
+      </div>
+      <div id="cdg-enlace-txt" style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px;">SIN DATOS</div>
+    </div>
+    <div class="log-box" id="cdg-log" style="margin-top:12px;"><span style="color:var(--blue);">Conectado — esperando datos...</span></div>
+  </div>
+</div>
+
+<!-- CONFIG CENTRAL -->
+<div class="screen" id="scr-cfg-central">
+  <button class="back-btn" onclick="goTo('scr-central')"> CENTRAL</button>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--blue);margin-bottom:20px;">⚙️ CONFIGURAR CENTRAL</div>
+  <div class="form-group">
+    <label class="form-label">IP ETHERNET</label>
+    <input type="text" class="form-input" id="cfg-ip" placeholder="192.168.1.100" maxlength="15">
+  </div>
+  <div class="form-group">
+    <label class="form-label">UMBRAL TOUCH</label>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <input type="range" class="slider" id="sl-touch-central" min="5000" max="35000" step="1000" value="20000" oninput="document.getElementById('sv-touch-central').textContent=parseInt(this.value).toLocaleString()">
+      <span class="slider-val" id="sv-touch-central">20,000</span>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">TIMEOUT COMUNICACIÓN</label>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <input type="range" class="slider" id="sl-timeout-central" min="3000" max="15000" step="1000" value="5000" oninput="document.getElementById('sv-timeout-central').textContent=this.value/1000+'s'">
+      <span class="slider-val" id="sv-timeout-central">5s</span>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">INTERVALO ESTADO</label>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <input type="range" class="slider" id="sl-ping-central" min="1000" max="10000" step="1000" value="3000" oninput="document.getElementById('sv-ping-central').textContent=this.value/1000+'s'">
+      <span class="slider-val" id="sv-ping-central">3s</span>
+    </div>
+  </div>
+  <button class="btn btn-blue" onclick="guardarCfgCentral()">💾 GUARDAR Y ENVIAR</button>
+  <button class="btn btn-outline" style="margin-top:8px;" onclick="desconectarCentral()">🔌 DESCONECTAR</button>
+</div>
+
+<!-- REGISTRO DE MÓDULOS -->
+<div class="screen" id="scr-registro">
+  <button class="back-btn" onclick="goTo('scr-home')"> ATRÁS</button>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:#bc8cff;margin-bottom:20px;">MAC · REGISTRO DE MÓDULOS</div>
+
+  <!-- CAPTURAR MAC -->
+  <div class="sec-title">CAPTURAR MÓDULO</div>
+  <div class="alert alert-blue">Conecta un módulo por BLE, introduce ROL y calle y pulsa CAPTURAR MAC. La PWA leerá la MAC del módulo, la guardará en Firebase y autorellenará la MAC del contrario si existe.</div>
+
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <div style="flex:1;">
+      <label class="form-label">ROL</label>
+      <select class="form-select" id="cap-rol">
+        <option value="diana">DIANA</option>
+        <option value="tirador">TIRADOR</option>
+      </select>
+    </div>
+    <div style="flex:1;">
+      <label class="form-label">ID CALLE</label>
+      <input type="number" class="form-input" id="cap-calle" min="1" max="100" placeholder="Calle">
+    </div>
+  </div>
+
+  <button class="btn btn-outline" style="border-color:#bc8cff;color:#bc8cff;" onclick="capturarMac()">📡 CAPTURAR MAC</button>
+
+  <div id="cap-resultado" style="display:none;margin-top:16px;"></div>
+
+  <!-- Consulta individual -->
+  <div class="sep"></div>
+  <div class="sec-title">CONSULTAR MÓDULO</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <div style="flex:1;">
+      <label class="form-label">ROL</label>
+      <select class="form-select" id="reg-rol">
+        <option value="diana">DIANA</option>
+        <option value="tirador">TIRADOR</option>
+      </select>
+    </div>
+    <div style="flex:1;">
+      <label class="form-label">ID CALLE</label>
+      <input type="number" class="form-input" id="reg-calle" min="1" max="100" placeholder="Calle">
+    </div>
+  </div>
+  <button class="btn btn-outline" style="border-color:#bc8cff;color:#bc8cff;" onclick="consultarModulo()">🔍 CONSULTAR</button>
+  <div id="reg-resultado" style="display:none;margin-top:16px;" class="alert alert-green"></div>
+
+  <!-- Lista completa -->
+  <div class="sep"></div>
+  <div class="sec-title">TODOS LOS MÓDULOS</div>
+  <button class="btn btn-outline" onclick="verTodos()">📋 ACTUALIZAR LISTA</button>
+  <div id="reg-lista" style="margin-top:12px;"></div>
+</div>
+
+<!-- SPLASH -->
+<div id="splash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <img src="icons/icon-512.png" style="width:260px;height:260px;border-radius:32px;">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// DIANET v7.6
+// ════════════════════════════════════════════
+
+const SVC   = '12345678-1234-1234-1234-123456789abc';
+const C_CFG = '12345678-1234-1234-1234-123456789ab1';
+const C_STS = '12345678-1234-1234-1234-123456789ab2';
+const C_CMD = '12345678-1234-1234-1234-123456789ab3';
+const C_DIG = '12345678-1234-1234-1234-123456789ab4';
+
+let currentScreen = 'scr-home';
+let scanRol = 'diana';
+let numFosos = 0;
+let fososData = [];
+let bleDevice = null, bleServer = null;
+let charCfg = null, charSts = null, charCmd = null, charDig = null;
+let toastTimer = null;
+let hayambios = false;
+let buscandoMac = false;
+let buscarMacTimer = null;
+
+// Firebase config
+const FB_URL = 'https://listify-16b5d-default-rtdb.europe-west1.firebasedatabase.app';
+const FB_PATH = 'dianet/modulos';
+let registroModulos = {};
+
+// Cargar registro desde Firebase al arrancar
+function resetRegistro() {
+  document.getElementById('cap-resultado').style.display = 'none';
+  document.getElementById('reg-resultado').style.display = 'none';
+  document.getElementById('reg-lista').innerHTML = '';
+  document.getElementById('cap-calle').value = '';
+  document.getElementById('reg-calle').value = '';
+}
+
+async function borrarModulo(calle, rol) {
+  if (!confirm('¿Dar de baja ' + rol.toUpperCase() + ' calle ' + calle + '?\nEl módulo contrario necesitará reconfigurarse.')) return;
+  const key = calle + '_' + rol;
+  delete registroModulos[key];
+  localStorage.setItem('dianet_registro', JSON.stringify(registroModulos));
+  try {
+    await fetch(FB_URL + '/' + FB_PATH + '/' + key + '.json', { method: 'DELETE' });
+    addLog('Módulo eliminado: ' + key, 'warn');
+    toast('Módulo dado de baja', 'warn');
+  } catch(e) {
+    addLog('Error al eliminar en Firebase', 'err');
+  }
+  verTodos();
+}
+
+async function cargarRegistro() {
+  try {
+    const r = await fetch(FB_URL + '/' + FB_PATH + '.json');
+    if (r.ok) {
+      const data = await r.json();
+      registroModulos = data || {};
+      localStorage.setItem('dianet_registro', JSON.stringify(registroModulos));
+      console.log('[Firebase] Registro cargado:', Object.keys(registroModulos).length, 'módulos');
+    }
+  } catch(e) {
+    // Sin internet usar caché local
+    const cache = localStorage.getItem('dianet_registro');
+    if (cache) registroModulos = JSON.parse(cache);
+    console.log('[Firebase] Sin internet, usando caché local');
+  }
+}
+
+async function guardarEnRegistro(calle, rol, mac, nombre) {
+  const key = calle + '_' + rol;
+  registroModulos[key] = { calle, rol, mac, nombre, fecha: new Date().toISOString().split('T')[0] };
+  localStorage.setItem('dianet_registro', JSON.stringify(registroModulos));
+  try {
+    await fetch(FB_URL + '/' + FB_PATH + '/' + key + '.json', {
+      method: 'PUT',
+      body: JSON.stringify(registroModulos[key])
+    });
+    console.log('[Firebase] Registro guardado:', key);
+  } catch(e) {
+    console.warn('[Firebase] Sin internet, guardado solo en caché local');
+  }
+}
+
+function macRegistrada(calle, rol) {
+  const rolContrario = rol === 'diana' ? 'tirador' : 'diana';
+  const key = calle + '_' + rolContrario;
+  return registroModulos[key] ? registroModulos[key].mac : null;
+}
+let testTouchActivo = false;
+let macPropia = '';
+let testTouchTimer = null;
+
+// ── NAVEGACIÓN ──
+function goTo(id) {
+  document.getElementById(currentScreen).classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+  window.scrollTo(0, 0);
+  if (id === 'scr-central') actualizarCentral();
+  if (id === 'scr-registro') resetRegistro();
+  if (id === 'scr-cfg-central') {
+    const ip = localStorage.getItem('dianet_central_ip') || '';
+    document.getElementById('cfg-ip').value = ip;
+  }
+}
+
+function irAScan(rol) {
+  scanRol = rol;
+  document.getElementById('scan-title').textContent = rol === 'diana' ? 'MÓDULO DIANA' : 'MÓDULO TIRADOR';
+  document.getElementById('scan-btn').className = 'btn ' + (rol === 'diana' ? 'btn-green' : 'btn-red');
+  document.getElementById('scan-status').textContent = '';
+  goTo('scr-scan');
+}
+
+// ── BLE STATUS ──
+function setBLE(st, label) {
+  document.getElementById('bleDot').className = 'ble-dot ' + (st || '');
+  document.getElementById('bleStatus').textContent = label || 'BLE OFF';
+}
+
+// ── TOAST ──
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || '');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── LOG ──
+function addLog(msg, type) {
+  const box = document.getElementById('dg-log');
+  if (!box) return;
+  const t = new Date().toTimeString().substring(0, 8);
+  const colors = { ok:'var(--green)', err:'var(--red)', warn:'var(--amber)', info:'var(--blue)' };
+  const d = document.createElement('div');
+  d.innerHTML = `<span style="color:var(--muted)">${t}</span> <span style="color:${colors[type]||colors.info}">${msg}</span>`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── SLIDERS ──
+function sv(id, val, fmt) {
+  document.getElementById('sv-' + id).textContent = fmt(val);
+}
+
+// ── CAMBIOS SIN GUARDAR ──
+function marcarCambio() {
+  hayambios = true;
+}
+
+// ── TABS ──
+function showTab(id) {
+  if (testTouchActivo) pararTestTouch();
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['config','diag'][i] === id);
+  });
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ── ABRIR PANTALLA NODO ──
+function abrirNodo() {
+  const nombre = bleDevice ? bleDevice.name : 'MODULO';
+  const sinConfig = nombre === 'MODULO';
+
+  document.getElementById('nodo-nombre').textContent = nombre;
+  document.getElementById('nodo-badge').innerHTML = sinConfig ?
+    '<span class="badge badge-amber">● SIN CONFIGURAR</span>' :
+    '<span class="badge badge-green">● CONFIGURADO</span>';
+
+  // Fijar rol desde home
+  const rolNum = scanRol === 'tirador' ? 2 : scanRol === 'central' ? 3 : 1;
+  document.getElementById('cfg-rol').value = rolNum;
+
+  // Badge de rol
+  const rolBadge = document.getElementById('cfg-rol-badge');
+  rolBadge.className = 'rol-badge ' + scanRol;
+  rolBadge.textContent = scanRol === 'diana' ? '🎯 MÓDULO DIANA' : scanRol === 'tirador' ? '🔫 MÓDULO TIRADOR' : '📡 CENTRAL';
+
+  // Label MAC según rol contrario
+  const macLabel = scanRol === 'diana' ? 'MAC DEL TIRADOR PAREJA' : 'MAC DE LA DIANA PAREJA';
+  document.getElementById('cfg-mac-label').textContent = macLabel;
+
+  // Color nombre según rol
+  const colores = { diana: 'var(--green)', tirador: 'var(--red)', central: 'var(--blue)' };
+  document.getElementById('nodo-nombre').style.color = colores[scanRol] || 'var(--green)';
+
+  // Limpiar campos hasta recibir config del módulo
+  document.getElementById('cfg-id').value  = '';
+  document.getElementById('cfg-mac').value = '';
+  hayambios = false;
+  showTab('config');
+  goTo('scr-nodo');
+}
+
+// ── ESCANEAR BLE ──
+async function escanear() {
+  if (!navigator.bluetooth) { toast('Web Bluetooth no disponible. Usa Chrome en Android.', 'err'); return; }
+  setBLE('scanning', 'BUSCANDO...');
+  document.getElementById('scan-status').textContent = 'Abriendo selector Bluetooth...';
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [
+        { namePrefix: 'DIANA_' },
+        { namePrefix: 'TIRADOR_' },
+        { namePrefix: 'MODULO' },
+        { namePrefix: 'CENTRAL' }
+      ],
+      optionalServices: [SVC]
+    });
+    bleDevice.addEventListener('gattserverdisconnected', onDesconectado);
+    document.getElementById('scan-status').textContent = 'Conectando...';
+    setBLE('scanning', 'CONECTANDO...');
+    bleServer = await bleDevice.gatt.connect();
+    const svc = await bleServer.getPrimaryService(SVC);
+    charCfg = await svc.getCharacteristic(C_CFG);
+    charSts = await svc.getCharacteristic(C_STS);
+    charCmd = await svc.getCharacteristic(C_CMD);
+    charDig = await svc.getCharacteristic(C_DIG);
+    await charSts.startNotifications();
+    charSts.addEventListener('characteristicvaluechanged', onStatus);
+    await charDig.startNotifications();
+    charDig.addEventListener('characteristicvaluechanged', onDiag);
+    setBLE('connected', bleDevice.name);
+    toast('Conectado a ' + bleDevice.name, 'ok');
+    abrirNodo();
+    // Solicitar config activamente tras suscribir notificaciones
+    setTimeout(() => cmd('GET_CONFIG'), 500);
+  } catch(e) {
+    setBLE('', '');
+    document.getElementById('scan-status').textContent = '';
+    if (e.name !== 'NotFoundError') toast('Error: ' + e.message, 'err');
+    else toast('Búsqueda cancelada', '');
+  }
+}
+
+function onDesconectado() {
+  setBLE('', '');
+  bleDevice = null;
+  bleServer = null;
+  charCfg = charSts = charCmd = charDig = null;
+  hayambios = false;
+  // Limpiar campos para evitar datos residuales
+  const cfgId  = document.getElementById('cfg-id');
+  const cfgMac = document.getElementById('cfg-mac');
+  if (cfgId)  cfgId.value  = '';
+  if (cfgMac) cfgMac.value = '';
+  toast('BLE desconectado', 'err');
+  addLog('BLE desconectado', 'err');
+}
+
+function desconectar() {
+  if (hayambios) {
+    if (!confirm('⚠ Hay cambios sin guardar.\n¿Salir de todas formas?')) return;
+  }
+  hayambios = false;
+  if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+  onDesconectado();
+  goTo('scr-home');
+}
+
+// ── COMANDOS BLE ──
+async function cmd(c) {
+  if (!charCmd) { toast('Sin conexión BLE', 'err'); return; }
+  try {
+    await charCmd.writeValue(new TextEncoder().encode(c));
+    addLog('CMD: ' + c, 'info');
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
+}
+
+function buscarMac() {
+  const calle = parseInt(document.getElementById('cfg-id').value);
+  const macStatus = document.getElementById('mac-status');
+  const rol = parseInt(document.getElementById('cfg-rol').value);
+
+  if (!calle || calle < 1 || calle > 100) {
+    macStatus.style.color = 'var(--amber)';
+    macStatus.textContent = 'Introduzca primero la calle.';
+    return;
+  }
+
+  const rolStr = rol === 1 ? 'diana' : 'tirador';
+  const macFirebase = macRegistrada(calle, rolStr);
+
+  if (macFirebase) {
+    document.getElementById('cfg-mac').value = macFirebase.toUpperCase();
+    macStatus.style.color = 'var(--green)';
+    macStatus.textContent = '✓ MAC encontrada y autorellenada.';
+    marcarCambio();
+    addLog('MAC contrario encontrada en registro: ' + macFirebase, 'ok');
+  } else {
+    macStatus.style.color = 'var(--amber)';
+    macStatus.textContent = 'No hay MAC registrada. Introduzca la MAC manualmente o GUARDE sin MAC asignada.';
+    addLog('Sin MAC del contrario en registro', 'warn');
+  }
+}
+
+async function guardarConfig() {
+  const rol    = parseInt(document.getElementById('cfg-rol').value);
+  const id     = document.getElementById('cfg-id').value;
+  let   mac    = document.getElementById('cfg-mac').value.trim().toUpperCase();
+  const umbral = parseInt(document.getElementById('sl-umbral').value);
+  const hold   = parseInt(document.getElementById('sl-hold').value);
+  const tble   = parseInt(document.getElementById('sl-tble').value);
+
+  if (!id || id < 1 || id > 100) { toast('⚠ ID de calle inválido (1-100)', 'err'); return; }
+  if (!charCfg) { toast('Sin conexión BLE', 'err'); return; }
+
+  // Si MAC vacía o inválida → intentar Firebase
+  const macValida = mac && mac.length === 17 && mac !== 'FF:FF:FF:FF:FF:FF';
+  if (!macValida) {
+    const rolStr = rol === 1 ? 'diana' : 'tirador';
+    const macFirebase = macRegistrada(parseInt(id), rolStr);
+    if (macFirebase) {
+      mac = macFirebase.toUpperCase();
+      document.getElementById('cfg-mac').value = mac;
+      addLog('MAC contrario obtenida de Firebase: ' + mac, 'ok');
+    } else {
+      // Sin MAC del contrario — guardar con FF:FF:FF:FF:FF:FF, autodescubrimiento en campo
+      mac = 'FF:FF:FF:FF:FF:FF';
+      toast('⚠ Sin MAC del contrario — se aprenderá automáticamente en campo', 'warn');
+      addLog('Sin MAC contrario — autodescubrimiento activo', 'warn');
+    }
+  }
+
+  const cfg = JSON.stringify({ rol, id:parseInt(id), mac, umbral, hold, timeout_ble:tble, ping_int:3000, ping_to:10000 });
+  try {
+    await charCfg.writeValue(new TextEncoder().encode(cfg));
+    addLog('Config enviada al módulo...', 'info');
+    // Firebase se actualiza al recibir confirmacion d.ok con el nombre correcto
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
+}
+
+async function borrarConfig() {
+  if (!confirm('¿Borrar toda la configuración y volver a valores de fábrica?')) return;
+  await cmd('BORRAR_CONFIG');
+}
+
+async function calibrar() {
+  if (testTouchActivo) pararTestTouch();
+  toast('Calibrando — no tocar sensores...', '');
+  addLog('Calibración iniciada', 'warn');
+  await cmd('CALIBRAR');
+}
+
+function iniciarTestTouch() {
+  if (testTouchActivo) { pararTestTouch(); return; }
+  testTouchActivo = true;
+  const btn = document.getElementById('btn-test-touch');
+  btn.style.borderColor = 'var(--green)';
+  btn.style.color = 'var(--green)';
+  // Parpadeo del botón
+  let vis = true;
+  testTouchTimer = setInterval(() => {
+    vis = !vis;
+    btn.style.opacity = vis ? '1' : '0.3';
+  }, 400);
+  // Parar automáticamente a los 10s
+  setTimeout(() => pararTestTouch(), 10000);
+  cmd('TEST_TOUCH');
+  addLog('Test touch iniciado — 10 segundos', 'info');
+}
+
+function pararTestTouch() {
+  testTouchActivo = false;
+  if (testTouchTimer) { clearInterval(testTouchTimer); testTouchTimer = null; }
+  const btn = document.getElementById('btn-test-touch');
+  if (btn) { btn.style.opacity = '1'; btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--muted)'; }
+  // Resetear barras touch
+  document.getElementById('dg-t1').textContent = '—';
+  document.getElementById('dg-t2').textContent = '—';
+  document.getElementById('dg-t1-bar').style.width = '0%';
+  document.getElementById('dg-t2-bar').style.width = '0%';
+  cmd('STOP_TOUCH');
+  addLog('Test touch finalizado', 'info');
+}
+
+async function activarMonitorPulsador() {
+  await cmd('TEST_PULSADOR_ON');
+  addLog('Monitor pulsador activo', 'ok');
+}
+
+async function pararMonitorPulsador() {
+  await cmd('TEST_PULSADOR_OFF');
+  const btn = document.getElementById('btn-pulsador');
+  btn.style.background = '#0d1117';
+  btn.style.borderColor = 'var(--border)';
+  btn.style.color = 'var(--muted)';
+  btn.textContent = 'PULSADOR SUELTO';
+  addLog('Monitor pulsador parado', 'info');
+}
+
+// ── NOTIFICACIÓN STATUS ──
+function onStatus(e) {
+  try {
+    const txt = new TextDecoder().decode(e.target.value);
+    addLog('RAW: ' + txt, 'info');
+    const d = JSON.parse(txt);
+
+    // Configuración actual del módulo al conectarse
+    if (d.tipo === 'config') {
+      if (d.mac_propia) { macPropia = d.mac_propia; }
+      document.getElementById('cfg-id').value  = d.id  || '';
+      document.getElementById('cfg-mac').value = (d.mac && d.mac !== 'FF:FF:FF:FF:FF:FF') ? d.mac : '';
+      if (d.umbral) { document.getElementById('sl-umbral').value = d.umbral; document.getElementById('sv-umbral').textContent = d.umbral; }
+      if (d.hold)   { document.getElementById('sl-hold').value = d.hold;     document.getElementById('sv-hold').textContent = Math.round(d.hold/1000) + 's'; }
+      if (d.timeout_ble) { document.getElementById('sl-tble').value = d.timeout_ble; document.getElementById('sv-tble').textContent = Math.round(d.timeout_ble/1000) + 's'; }
+      // Actualizar nombre mostrado
+      if (d.nombre) {
+        document.getElementById('nodo-nombre').textContent = d.nombre;
+        setBLE('connected', d.nombre);
+        const sinConfig = d.nombre === 'MODULO VACIO' || d.nombre === 'MODULO';
+        document.getElementById('nodo-badge').innerHTML = sinConfig ?
+          '<span class="badge badge-amber">● SIN CONFIGURAR</span>' :
+          '<span class="badge badge-green">● CONFIGURADO</span>';
+      }
+      // Autorellenar MAC del contrario desde Firebase
+      if (d.id && d.rol) {
+        const rolContrario = d.rol === 1 ? 'tirador' : 'diana';
+        const macFirebase = registroModulos[d.id + '_' + rolContrario];
+        if (macFirebase && (!d.mac || d.mac === 'FF:FF:FF:FF:FF:FF')) {
+          document.getElementById('cfg-mac').value = macFirebase.mac;
+          addLog('MAC contrario autorellenada: ' + macFirebase.mac, 'ok');
+        } else if (!d.mac || d.mac === 'FF:FF:FF:FF:FF:FF') {
+          addLog('Sin MAC del contrario — introdúzcala manualmente o guarde sin ella', 'warn');
+          toast('Sin MAC del contrario — introdúzcala o guarde sin ella', 'warn');
+        }
+      }
+      hayambios = false;
+      addLog('Config cargada · Calle ' + d.id, 'ok');
+      return;
+    }
+
+    // MAC encontrada por autodescubrimiento
+    if (d.mac_encontrada) {
+      if (buscarMacTimer) { clearTimeout(buscarMacTimer); buscarMacTimer = null; }
+      buscandoMac = false;
+      const btn = document.getElementById('btn-buscar-mac');
+      const macStatus = document.getElementById('mac-status');
+      btn.textContent = '🔍 BUSCAR';
+      btn.disabled = false;
+      document.getElementById('cfg-mac').value = d.mac_encontrada;
+      marcarCambio();
+      // Comparar con registro Firebase
+      const id = document.getElementById('cfg-id').value;
+      const macConocida = macRegistrada(parseInt(id), scanRol);
+      if (macConocida && macConocida.toUpperCase() === d.mac_encontrada.toUpperCase()) {
+        macStatus.style.color = 'var(--green)';
+        macStatus.textContent = '✓ MAC verificada con el registro';
+        addLog('MAC encontrada y verificada: ' + d.mac_encontrada, 'ok');
+      } else if (macConocida) {
+        macStatus.style.color = 'var(--amber)';
+        macStatus.textContent = '⚠ MAC diferente al registro. Verifique.';
+        addLog('MAC diferente al registro. Recibida: ' + d.mac_encontrada + ' · Registrada: ' + macConocida, 'warn');
+      } else {
+        macStatus.style.color = 'var(--blue)';
+        macStatus.textContent = 'MAC detectada · No hay registro previo';
+        addLog('MAC detectada (sin registro previo): ' + d.mac_encontrada, 'info');
+      }
+      return;
+    }
+
+    // Timeout búsqueda MAC
+    if (d.mac_timeout) {
+      if (buscarMacTimer) { clearTimeout(buscarMacTimer); buscarMacTimer = null; }
+      buscandoMac = false;
+      const btn = document.getElementById('btn-buscar-mac');
+      btn.textContent = '🔍 BUSCAR';
+      btn.disabled = false;
+      const macStatus = document.getElementById('mac-status');
+      macStatus.style.color = 'var(--red)';
+      macStatus.textContent = 'No encontrado. Introdúzcala manualmente.';
+      addLog('Búsqueda MAC sin respuesta', 'err');
+      return;
+    }
+
+    // Confirmación de guardado
+    if (d.ok) {
+      hayambios = false;
+      if (d.nombre) {
+        document.getElementById('nodo-nombre').textContent = d.nombre;
+        const sinConfig = d.nombre === 'MODULO';
+        document.getElementById('nodo-badge').innerHTML = sinConfig ?
+          '<span class="badge badge-amber">● SIN CONFIGURAR</span>' :
+          '<span class="badge badge-green">● CONFIGURADO</span>';
+        setBLE('connected', d.nombre);
+        // Guardar en Firebase con el nombre correcto
+        if (macPropia) {
+          const rolEl = document.getElementById('cfg-rol');
+          const idEl  = document.getElementById('cfg-id');
+          const rolNum = parseInt(rolEl ? rolEl.value : 0);
+          const rolStr = rolNum === 1 ? 'diana' : rolNum === 2 ? 'tirador' : 'central';
+          const calle  = parseInt(idEl ? idEl.value : 0);
+          if (calle) {
+            guardarEnRegistro(calle, rolStr, macPropia, d.nombre)
+              .then(() => addLog('Registrado en Firebase: ' + d.nombre, 'ok'))
+              .catch(() => addLog('Error al registrar en Firebase', 'err'));
+          }
+        }
+      }
+      toast('✓ Configuración guardada correctamente', 'ok');
+      addLog('Config guardada · ' + (d.nombre || ''), 'ok');
+      return;
+    }
+
+    // Confirmación de borrado
+    if (d.borrado) {
+      document.getElementById('cfg-id').value  = '';
+      document.getElementById('cfg-mac').value = '';
+      document.getElementById('sl-umbral').value = 500; document.getElementById('sv-umbral').textContent = '500';
+      document.getElementById('sl-hold').value = 5000;  document.getElementById('sv-hold').textContent = '5s';
+      document.getElementById('sl-tble').value = 60000; document.getElementById('sv-tble').textContent = '60s';
+      hayambios = false;
+      toast('⚠ Valores de fábrica · Pulsa GUARDAR para confirmar', '');
+      addLog('Config borrada — pulsa GUARDAR para confirmar', 'warn');
+      return;
+    }
+
+    // Calibración
+    if (d.calibrado1 !== undefined && d.umbral !== undefined) {
+      // Actualizar barras y valores de ambos sensores
+      document.getElementById('dg-t1').textContent = d.calibrado1;
+      document.getElementById('dg-t2').textContent = d.calibrado2;
+      const max = 1500;
+      animarBarra('dg-t1-bar', Math.min(100, Math.round(d.calibrado1/max*100)));
+      animarBarra('dg-t2-bar', Math.min(100, Math.round(d.calibrado2/max*100)));
+      // Animar slider umbral
+      animarSlider('sl-umbral', d.umbral);
+      document.getElementById('sv-umbral').textContent = d.umbral;
+      const cr = document.getElementById('cal-result');
+      cr.style.display = 'block';
+      cr.textContent = '✓ T1:' + d.calibrado1 + ' T2:' + d.calibrado2 + ' · Umbral: ' + d.umbral;
+    }
+
+    // Estado pulsador
+    if (d.pulsador !== undefined) {
+      const btn = document.getElementById('btn-pulsador');
+      if (d.pulsador) {
+        btn.style.background = '#003d1a';
+        btn.style.borderColor = 'var(--green)';
+        btn.style.color = 'var(--green)';
+        btn.textContent = 'PULSADOR ACTIVADO';
+      } else {
+        btn.style.background = '#0d1117';
+        btn.style.borderColor = 'var(--border)';
+        btn.style.color = 'var(--muted)';
+        btn.textContent = 'PULSADOR SUELTO';
+      }
+      addLog('Pulsador: ' + (d.pulsador ? 'ON' : 'OFF'), d.pulsador ? 'ok' : 'info');
+      return;
+    }
+
+    // Test touch
+    if (d.touch_fin) {
+      pararTestTouch();
+      return;
+    }
+    if (d.t1 !== undefined) {
+      document.getElementById('dg-t1').textContent = d.t1;
+      document.getElementById('dg-t2').textContent = d.t2;
+      // Barra proporcional al valor (mayor valor = más alto = sin tocar)
+      const max = 1500;
+      document.getElementById('dg-t1-bar').style.width = Math.min(100, Math.round(d.t1/max*100)) + '%';
+      document.getElementById('dg-t2-bar').style.width = Math.min(100, Math.round(d.t2/max*100)) + '%';
+    }
+  } catch(err) { addLog('Error status: ' + err.message, 'err'); }
+}
+
+// ── NOTIFICACIÓN DIAGNÓSTICO ──
+function onDiag(e) {
+  try {
+    const d = JSON.parse(new TextDecoder().decode(e.target.value));
+    if (d.fw)       document.getElementById('dg-fw').textContent  = d.fw;
+    if (d.reinicios !== undefined) document.getElementById('dg-rei').textContent = d.reinicios;
+    if (d.uptime    !== undefined) {
+      const h = Math.floor(d.uptime/3600), m = Math.floor((d.uptime%3600)/60);
+      document.getElementById('dg-up').textContent = h + 'h' + m + 'm';
+    }
+    if (d.perdidos  !== undefined) document.getElementById('dg-pkt').textContent = d.perdidos;
+    // Calidad enlace
+    if (d.calidad !== undefined) {
+      const q = d.calidad;
+      let label, color, pct;
+      if (q >= 90)      { label = 'EXCELENTE · ' + q + '%'; color = 'var(--green)';  pct = q; }
+      else if (q >= 70) { label = 'BUENA · ' + q + '%';     color = 'var(--amber)';  pct = q; }
+      else              { label = 'MALA · ' + q + '%';       color = 'var(--red)';    pct = q; }
+      document.getElementById('dg-enlace-bar').style.width = pct + '%';
+      document.getElementById('dg-enlace-bar').style.background = color;
+      document.getElementById('dg-enlace-txt').textContent = label;
+    } else {
+      const q = d.enlace ? 80 : 10;
+      document.getElementById('dg-enlace-bar').style.width = q + '%';
+      document.getElementById('dg-enlace-bar').style.background = d.enlace ? 'var(--green)' : 'var(--red)';
+      document.getElementById('dg-enlace-txt').textContent = d.enlace ? 'ENLACE OK' : 'SIN ENLACE';
+    }
+  } catch(e) {}
+}
+
+// ── ANIMAR SLIDER ──
+function animarBarra(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = pct + '%';
+}
+
+function animarSlider(id, target) {
+  const sl = document.getElementById(id);
+  if (!sl) return;
+  let cur = parseInt(sl.min);
+  const step = Math.max(1, Math.ceil((target - cur) / 20));
+  const iv = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    sl.value = cur;
+    if (cur >= target) clearInterval(iv);
+  }, 50);
+}
+
+// ── CENTRAL ──
+async function conectarCentral() {
+  if (!navigator.bluetooth) { toast('Web Bluetooth no disponible', 'err'); return; }
+  setBLE('scanning', 'BUSCANDO...');
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'CENTRAL' }],
+      optionalServices: [SVC]
+    });
+    bleServer = await bleDevice.gatt.connect();
+    bleDevice.addEventListener('gattserverdisconnected', onDesconectadoCentral);
+    const svc = await bleServer.getPrimaryService(SVC);
+    charSts = await svc.getCharacteristic(C_STS);
+    charCmd = await svc.getCharacteristic(C_CMD);
+    charDig = await svc.getCharacteristic(C_DIG);
+    await charSts.startNotifications();
+    charSts.addEventListener('characteristicvaluechanged', onStatusCentral);
+    await charDig.startNotifications();
+    charDig.addEventListener('characteristicvaluechanged', onDiagCentral);
+    setBLE('connected', bleDevice.name);
+    toast('Conectado al central', 'ok');
+    goTo('scr-central');
+    construirGrid();
+    setTimeout(() => cmd('GET_CONFIG'), 500);
+  } catch(e) {
+    setBLE('', '');
+    if (e.name !== 'NotFoundError') toast('Error: ' + e.message, 'err');
+  }
+}
+
+function desconectarCentral() {
+  if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+  charSts = charCmd = charDig = charCfg = null;
+  bleDevice = bleServer = null;
+  setBLE('', '');
+  goTo('scr-home');
+}
+
+function onDesconectadoCentral() {
+  charSts = charCmd = charDig = charCfg = null;
+  bleDevice = bleServer = null;
+  setBLE('', '');
+  toast('Central desconectado', 'err');
+  goTo('scr-home');
+}
+
+function onStatusCentral(e) {
+  try {
+    const txt = new TextDecoder().decode(e.target.value);
+    const d = JSON.parse(txt);
+    if (d.tipo === 'config') {
+      document.getElementById('cdg-ip').textContent = d.ip || '—';
+      document.getElementById('central-nombre').textContent = bleDevice ? bleDevice.name : 'CENTRAL';
+      // Cargar valores en cfg
+      if (d.ip)      document.getElementById('cfg-ip').value = d.ip;
+      if (d.umbral)  { document.getElementById('sl-touch-central').value = d.umbral; document.getElementById('sv-touch-central').textContent = parseInt(d.umbral).toLocaleString(); }
+      if (d.timeout) { document.getElementById('sl-timeout-central').value = d.timeout; document.getElementById('sv-timeout-central').textContent = d.timeout/1000+'s'; }
+      if (d.ping_int){ document.getElementById('sl-ping-central').value = d.ping_int; document.getElementById('sv-ping-central').textContent = d.ping_int/1000+'s'; }
+    }
+  } catch(e) {}
+}
+
+function onDiagCentral(e) {
+  try {
+    const d = JSON.parse(new TextDecoder().decode(e.target.value));
+    if (d.fw)       document.getElementById('cdg-fw').textContent = d.fw;
+    if (d.reinicios !== undefined) document.getElementById('cdg-rei').textContent = d.reinicios;
+    if (d.uptime !== undefined) {
+      const h = Math.floor(d.uptime/3600), m = Math.floor((d.uptime%3600)/60);
+      document.getElementById('cdg-up').textContent = h + 'h' + m + 'm';
+    }
+    if (d.fosos !== undefined) document.getElementById('cdg-fosos').textContent = d.fosos;
+    if (d.calidad !== undefined) {
+      const q = d.calidad;
+      let label, color;
+      if (q >= 90)      { label = 'EXCELENTE · ' + q + '%'; color = 'var(--green)'; }
+      else if (q >= 70) { label = 'BUENA · ' + q + '%';     color = 'var(--amber)'; }
+      else              { label = 'MALA · ' + q + '%';       color = 'var(--red)'; }
+      document.getElementById('cdg-enlace-bar').style.width = q + '%';
+      document.getElementById('cdg-enlace-bar').style.background = color;
+      document.getElementById('cdg-enlace-txt').textContent = label;
+    }
+  } catch(e) {}
+}
+
+function tabCentral(tab) {
+  document.getElementById('tab-central-fosos').style.display = tab === 'fosos' ? 'block' : 'none';
+  document.getElementById('tab-central-diag').style.display  = tab === 'diag'  ? 'block' : 'none';
+  document.getElementById('tab-c-fosos').classList.toggle('active', tab === 'fosos');
+  document.getElementById('tab-c-diag').classList.toggle('active', tab === 'diag');
+}
+
+async function capturarMac() {
+  if (!bleDevice || !bleDevice.gatt.connected) {
+    toast('Conecta primero un módulo por BLE', 'err');
+    return;
+  }
+  const rol   = document.getElementById('cap-rol').value;
+  const calle = parseInt(document.getElementById('cap-calle').value);
+  if (!calle || calle < 1 || calle > 100) { toast('ID de calle inválido', 'err'); return; }
+
+  // MAC del módulo conectado
+  const nombreModulo = bleDevice.name;
+  // La MAC viene del nombre BLE o del diagnóstico
+  // Pedimos al módulo que nos envíe su config actual para obtener la MAC
+  const macModulo = bleDevice.id || '—'; // En Web Bluetooth el ID no es la MAC directamente
+
+  // Buscar MAC del contrario en Firebase
+  const rolContrario = rol === 'diana' ? 'tirador' : 'diana';
+  const macContrario = macRegistrada(calle, rol); // macRegistrada busca el contrario
+
+  const resultado = document.getElementById('cap-resultado');
+  resultado.style.display = 'block';
+
+  // Guardar en Firebase este módulo
+  // La MAC real la obtenemos cuando el módulo envía su config (enviarConfigActual)
+  // Por ahora guardamos lo que tenemos y esperamos la notificación
+  await cmd('CAPTURAR_MAC'); // Pedimos al módulo que nos envíe su MAC
+
+  resultado.innerHTML = `
+    <div class="alert alert-blue" style="margin-bottom:8px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:8px;">
+        MÓDULO CONECTADO: ${nombreModulo}
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;">
+        ROL: ${rol.toUpperCase()} · CALLE: ${calle}
+      </div>
+    </div>`;
+
+  const macContrarioFirebase = registroModulos[calle + '_' + rolContrario];
+  if (macContrarioFirebase) {
+    resultado.innerHTML += `
+      <div class="alert alert-green">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:2px;margin-bottom:6px;">
+          MAC DEL ${rolContrario.toUpperCase()} ${calle} EN FIREBASE:
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.85rem;">
+          ${macContrarioFirebase.mac}
+        </div>
+        <div style="font-size:0.7rem;margin-top:4px;color:var(--muted);">
+          Se programará automáticamente en este módulo al guardar
+        </div>
+      </div>`;
+    // Autorellenar MAC en el campo de configuración del nodo
+    const cfgMac = document.getElementById('cfg-mac');
+    if (cfgMac) cfgMac.value = macContrarioFirebase.mac;
+  } else {
+    resultado.innerHTML += `
+      <div class="alert alert-amber">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;">
+          Sin registro previo del ${rolContrario.toUpperCase()} ${calle} en Firebase.<br>
+          Captura primero ese módulo.
+        </div>
+      </div>`;
+  }
+}
+
+function consultarModulo() {
+  const rol   = document.getElementById('reg-rol').value;
+  const calle = parseInt(document.getElementById('reg-calle').value);
+  if (!calle || calle < 1 || calle > 100) { toast('ID de calle inválido', 'err'); return; }
+
+  const key = calle + '_' + rol;
+  const modulo = registroModulos[key];
+  const resultado = document.getElementById('reg-resultado');
+
+  if (modulo) {
+    resultado.style.display = 'block';
+    resultado.className = 'alert alert-green';
+    resultado.innerHTML = `
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:8px;">
+        ${rol.toUpperCase()} · CALLE ${calle}
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;line-height:2;">
+        MAC: <strong>${modulo.mac}</strong><br>
+        Nombre: ${modulo.nombre || '—'}<br>
+        Fecha alta: ${modulo.fecha || '—'}
+      </div>`;
+  } else {
+    resultado.style.display = 'block';
+    resultado.className = 'alert alert-amber';
+    resultado.innerHTML = `<span style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;">No hay registro para ${rol.toUpperCase()} · Calle ${calle}</span>`;
+  }
+}
+
+function verTodos() {
+  cargarRegistro().then(() => {
+    const lista = document.getElementById('reg-lista');
+    const modulos = Object.values(registroModulos);
+    if (!modulos.length) {
+      lista.innerHTML = `<div class="alert alert-amber" style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;">Sin módulos registrados</div>`;
+      return;
+    }
+    // Ordenar por calle y rol
+    modulos.sort((a, b) => a.calle - b.calle || a.rol.localeCompare(b.rol));
+    lista.innerHTML = '';
+    modulos.forEach(m => {
+      const color = m.rol === 'diana' ? 'var(--green)' : 'var(--red)';
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px;';
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:${color};">
+            ${m.rol.toUpperCase()} · CALLE ${m.calle}
+          </span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--muted);">${m.fecha || ''}</span>
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--text2);margin-bottom:8px;">
+          MAC: ${m.mac}<br>
+          ${m.nombre || ''}
+        </div>
+        <button onclick="borrarModulo(${m.calle},'${m.rol}')" style="background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:2px;padding:4px 10px;border-radius:4px;cursor:pointer;">✕ DAR DE BAJA</button>`;
+      lista.appendChild(div);
+    });
+  });
+}
+
+function actualizarCentral() {
+  construirGrid();
+}
+
+function refrescarFosos() {
+  cargarRegistro().then(() => {
+    construirGrid();
+    toast('Fosos actualizados', 'ok');
+  });
+}
+
+function construirGrid() {
+  const grid  = document.getElementById('fosos-grid');
+  const vacio = document.getElementById('central-vacio');
+  if (!grid) return;  // pantalla central no activa
+  grid.innerHTML = '';
+
+  // Obtener calles únicas desde Firebase
+  const calles = {};
+  Object.values(registroModulos).forEach(m => {
+    if (!calles[m.calle]) calles[m.calle] = { id: m.calle, ok: false, stopped: false };
+  });
+
+  // Solo fosos con diana Y tirador registrados
+  const fososCompletos = {};
+  Object.values(registroModulos).forEach(m => {
+    if (!fososCompletos[m.calle]) fososCompletos[m.calle] = {};
+    fososCompletos[m.calle][m.rol] = true;
+  });
+  const lista = Object.keys(fososCompletos)
+    .filter(c => fososCompletos[c].diana && fososCompletos[c].tirador)
+    .map(c => ({ id: parseInt(c), ok: false }))
+    .sort((a, b) => a.id - b.id);
+
+  if (!lista.length) {
+    vacio.style.display = 'block';
+    const ctOk  = document.getElementById('ct-ok');
+    const ctErr = document.getElementById('ct-err');
+    if (ctOk)  ctOk.textContent  = 0;
+    if (ctErr) ctErr.textContent = 0;
+    const hci = document.getElementById('home-central-info');
+    if (hci) hci.textContent = 'Sin fosos registrados';
+    return;
+  }
+
+  vacio.style.display = 'none';
+  let ok = 0, err = 0;
+  lista.forEach(f => {
+    const st = f.stopped ? 'stopped' : f.ok ? 'ok' : 'error';
+    if (f.ok) ok++; else err++;
+    const t = document.createElement('div');
+    t.className = 'foso-tile ' + st;
+    t.innerHTML = `<div class="foso-num">${String(f.id).padStart(2,'0')}</div><div class="foso-dot"></div>`;
+    grid.appendChild(t);
+  });
+  const ctOk2  = document.getElementById('ct-ok');
+  const ctErr2 = document.getElementById('ct-err');
+  if (ctOk2)  ctOk2.textContent  = ok;
+  if (ctErr2) ctErr2.textContent = err;
+  const hci2 = document.getElementById('home-central-info');
+  if (hci2) hci2.textContent = lista.length + ' fosos registrados';
+  const cl = document.getElementById('central-label');
+  if (cl) cl.textContent = lista.length + ' FOSOS EN FIREBASE';
+}
+
+function guardarCfgCentral() {
+  const ip = document.getElementById('cfg-ip').value.trim();
+  const timeout = document.getElementById('sl-timeout-central').value;
+  const ping = document.getElementById('sl-ping-central').value;
+  if (ip) localStorage.setItem('dianet_central_ip', ip);
+  toast('Configuración guardada', 'ok');
+  // TODO: enviar por BLE al central cuando esté conectado
+  goTo('scr-central');
+}
+
+function pararTodos()    { toast('PARAR TODOS — pendiente conexión central', 'warn'); }
+function reanudarTodos() { toast('REANUDAR TODOS — pendiente conexión central', 'warn'); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  cargarRegistro();
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+  }, 2000);
+});
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/dianet/sw2.js')
+      .then(r => console.log('[DIANET] SW:', r.scope))
+      .catch(e => console.warn('[DIANET] SW error:', e));
+  });
+}
+</script>
+
+</body>
+</html>
